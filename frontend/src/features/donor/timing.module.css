@@ -1,0 +1,76 @@
+.block {
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+}
+.heading {
+  font-size: var(--t-md);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.note {
+  margin-top: calc(var(--s-3) * -1);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* One value per line, full card width */
+.row {
+  display: grid;
+  gap: var(--s-2) var(--s-3);
+  min-width: 0;
+}
+@media (min-width: 560px) {
+  .row {
+    grid-template-columns: 104px minmax(0, 1fr);
+    align-items: center;
+  }
+  .err {
+    grid-column: 2;
+  }
+}
+.label {
+  font-size: var(--t-sm);
+  font-weight: 560;
+  color: var(--ink-2);
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.row .input {
+  width: auto;
+  height: 34px;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-pill);
+  font-size: var(--t-sm);
+}
+
+.issue {
+  display: grid;
+  justify-items: start;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--r-card);
+  background: var(--red-soft);
+  color: var(--red-ink);
+  font-size: var(--t-sm);
+}
+
+.summary {
+  padding: var(--s-4);
+  border-radius: var(--r-card);
+  background: var(--basil-soft);
+  color: var(--basil-ink);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+}

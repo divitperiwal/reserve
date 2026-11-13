@@ -1,0 +1,84 @@
+:root {
+  --font-sans: 'Onest Variable', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: var(--font-sans);
+
+  --bg: #ffffff;
+  --bg-deep: #f5f5f7;
+  --surface: #ffffff;
+  --surface-2: #f5f5f7;
+  --surface-sunk: #f0f0f2;
+  --fill: rgb(120 120 128 / 0.12);
+  --fill-strong: rgb(120 120 128 / 0.2);
+  --line: #e8e8ed;
+  --line-strong: #d2d2d7;
+
+  --ink: #1d1d1f;
+  --ink-2: #6e6e73;
+  --ink-3: #a1a1a6;
+  --ink-inverse: #ffffff;
+
+  --basil: #3a7d44;
+  --basil-press: #2f6838;
+  --basil-soft: #edf5ee;
+  --basil-ink: #2a5e32;
+
+  --green: var(--basil);
+  --green-press: var(--basil-press);
+  --green-soft: var(--basil-soft);
+  --green-ink: var(--basil-ink);
+  --amber: var(--ink);
+  --amber-press: #000000;
+  --amber-soft: var(--surface-2);
+  --amber-ink: var(--ink-2);
+
+  --red: #d93025;
+  --red-soft: #fdeceb;
+  --red-ink: #b3261e;
+
+  --dark: #1d1d1f;
+  --dark-2: #2c2c2e;
+  --dark-line: #3a3a3c;
+
+  --food-cooked: var(--surface-2);
+  --food-bakery: var(--surface-2);
+  --food-fresh: var(--surface-2);
+  --food-packaged: var(--surface-2);
+  --food-raw: var(--surface-2);
+
+  --r-card: 18px;
+  --r-ctl: 12px;
+  --r-sm: 8px;
+  --r-pill: 999px;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+
+  --t-xs: 0.75rem;
+  --t-sm: 0.8125rem;
+  --t-md: 1.0625rem;
+  --t-body: 0.9375rem;
+  --t-lg: 1.25rem;
+  --t-xl: 1.75rem;
+  --t-2xl: 2.125rem;
+  --t-3xl: clamp(2.75rem, 6vw, 4.5rem);
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-2: 0 4px 16px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.04);
+  --shadow-3: 0 20px 48px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.06);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --d-press: 120ms;
+  --d-state: 220ms;
+  --d-layout: 420ms;
+
+  --focus: 0 0 0 3px rgb(58 125 68 / 0.35);
+  --tabbar-h: 64px;
+}

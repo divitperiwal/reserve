@@ -1,0 +1,60 @@
+/* The volunteer app is a phone app; on laptops it sits in a phone-width column */
+.frame {
+  min-height: 100dvh;
+  background: var(--bg);
+}
+.phone {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;
+  margin: 0 auto;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  background: var(--bg);
+  /* Makes fixed children (tab bar, map stage) stay inside the column */
+  transform: translateZ(0);
+}
+@media (min-width: 520px) {
+  .frame {
+    background: var(--surface-2);
+  }
+  .phone {
+    box-shadow: 0 0 0 1px var(--line), 0 24px 64px rgb(0 0 0 / 0.06);
+  }
+}
+
+.tabbar {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 500;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  padding: 6px var(--s-2) env(safe-area-inset-bottom);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: inset 0 1px 0 var(--line);
+}
+.tab {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 2px;
+  min-height: 44px;
+  padding-top: 2px;
+  font-size: 10.5px;
+  font-weight: 560;
+  color: var(--ink-3);
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color var(--d-state) var(--ease),
+    transform var(--d-press) var(--ease);
+}
+.tab:active {
+  transform: scale(0.94);
+}
+.tabActive {
+  color: var(--basil);
+}

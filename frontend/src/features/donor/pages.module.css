@@ -1,0 +1,138 @@
+/* Donations */
+.filters > div {
+  display: grid;
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .filters > div {
+    display: inline-grid;
+    width: auto;
+  }
+}
+.skel {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+}
+.count {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+
+/* Profile */
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  border-bottom: 1px solid var(--line);
+}
+.identity > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+.identity strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-lg);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+.identity em {
+  font-style: normal;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+.details {
+  display: grid;
+  margin: 0;
+}
+.details > div {
+  display: grid;
+  gap: 2px var(--s-4);
+  padding: var(--s-4) var(--s-5);
+}
+.details > div + div {
+  border-top: 1px solid var(--line);
+}
+.details dt {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+.details dd {
+  margin: 0;
+  font-weight: 520;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 640px) {
+  .details > div {
+    grid-template-columns: 180px minmax(0, 1fr);
+    align-items: center;
+  }
+}
+.impact {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-5) var(--s-4);
+  margin: 0;
+}
+.impact div {
+  display: grid;
+  gap: 2px;
+}
+.impact dt {
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+.impact dd {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.account {
+  display: grid;
+  gap: var(--s-3);
+}
+.account p {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+
+/* Donation sheet */
+.detail {
+  display: grid;
+  gap: var(--s-5);
+}
+.status {
+  display: grid;
+  gap: 2px;
+}
+.status strong {
+  font-size: var(--t-md);
+  font-weight: 600;
+}
+.status span {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+.footerPair {
+  display: flex;
+  gap: var(--s-2);
+  width: 100%;
+}
+.grow {
+  flex: 1;
+}
+.call {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--basil-soft);
+  color: var(--basil-ink);
+}

@@ -1,0 +1,347 @@
+.stage {
+  position: fixed;
+  inset: 0;
+  container: stage / inline-size;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  isolation: isolate;
+}
+
+.floatBack {
+  position: absolute;
+  z-index: 10;
+  top: calc(12px + env(safe-area-inset-top));
+  left: 12px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-2);
+  transition: transform var(--d-press) var(--ease);
+}
+.floatBack:active {
+  transform: scale(0.94);
+}
+
+.card {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 86dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--s-5) calc(var(--s-5) + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-radius: 22px 22px 0 0;
+  box-shadow: var(--shadow-3);
+  animation: rise var(--d-layout) var(--spring);
+}
+
+.grabber,
+.grabberStatic {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 22px;
+}
+.grabber span,
+.grabberStatic::after {
+  content: '';
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--fill-strong);
+}
+
+.cardBack {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  margin: 0 0 var(--s-2) -6px;
+  padding: 0 8px 0 2px;
+  border-radius: var(--r-sm);
+  color: var(--basil);
+  font-weight: 520;
+  transition: background-color var(--d-state) var(--ease);
+}
+@media (hover: hover) {
+  .cardBack:hover {
+    background: var(--basil-soft);
+  }
+}
+
+.body {
+  display: grid;
+  gap: var(--s-5);
+}
+.more {
+  margin-top: var(--s-5);
+  animation: fade var(--d-layout) var(--ease);
+}
+.more[data-open='false'] {
+  display: none;
+}
+
+@container stage (min-width: 1024px) {
+  .floatBack,
+  .grabber,
+  .grabberStatic {
+    display: none;
+  }
+  .card {
+    top: 16px;
+    left: 16px;
+    right: auto;
+    bottom: auto;
+    width: 380px;
+    max-height: calc(100dvh - 32px);
+    padding: var(--s-4) var(--s-5) var(--s-5);
+    border-radius: 22px;
+    animation-name: drop;
+  }
+  .cardBack {
+    display: inline-flex;
+  }
+  .more[data-open='false'] {
+    display: grid;
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Card content */
+.head {
+  display: grid;
+  gap: 4px;
+}
+.title {
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+}
+.sub {
+  color: var(--ink-2);
+  font-size: var(--t-body);
+}
+
+.eta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.etaNum {
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.etaUnit {
+  font-size: var(--t-lg);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.etaMeta {
+  flex-basis: 100%;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.personText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.personName {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.personMeta {
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.call {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--basil-soft);
+  color: var(--basil-ink);
+  transition:
+    background-color var(--d-state) var(--ease),
+    transform var(--d-press) var(--ease);
+}
+.call:active {
+  transform: scale(0.92);
+}
+@media (hover: hover) {
+  .call:hover {
+    background: color-mix(in srgb, var(--basil) 18%, var(--surface));
+  }
+}
+
+.actions {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.note {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+
+/* Code shown by the volunteer */
+.codeBlock {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--r-card);
+  background: var(--surface-2);
+}
+.codeLabel {
+  display: grid;
+  gap: 2px;
+}
+.codeLabel strong {
+  font-weight: 600;
+}
+.codeLabel span {
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-2);
+}
+.tile {
+  display: grid;
+  place-items: center;
+  height: 64px;
+  border-radius: 14px;
+  background: var(--surface);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Code entry sheet */
+.codeForm {
+  display: grid;
+  gap: var(--s-4);
+  padding-top: var(--s-1);
+}
+.codeHint {
+  color: var(--ink-2);
+}
+.entry {
+  position: relative;
+  display: block;
+}
+.entryInput {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  opacity: 0;
+  border: 0;
+  caret-color: transparent;
+  font-size: 16px;
+}
+.tileEntry {
+  background: var(--surface-2);
+  border: 2px solid transparent;
+  transition: border-color var(--d-state) var(--ease);
+}
+.entry:focus-within .tileNow {
+  border-color: var(--basil);
+}
+.tileError {
+  border-color: var(--red);
+}
+.codeError {
+  color: var(--red-ink);
+  font-size: var(--t-sm);
+}
+
+/* Delivered */
+.done {
+  display: grid;
+  justify-items: start;
+  gap: var(--s-4);
+}
+.doneIcon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--basil);
+  color: var(--ink-inverse);
+  animation: pop var(--d-layout) var(--spring);
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* Loading and error states */
+.center {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--s-5);
+}
+.pair {
+  display: flex;
+  gap: var(--s-2);
+}
+.skeleton {
+  display: grid;
+  gap: var(--s-3);
+}

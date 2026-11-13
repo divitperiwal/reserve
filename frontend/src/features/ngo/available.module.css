@@ -1,0 +1,158 @@
+.block {
+  display: grid;
+  gap: var(--s-4);
+}
+.empty {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border-radius: var(--r-card);
+  border: 1px dashed var(--line-strong);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--r-card);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-4);
+}
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+.text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 3px;
+}
+.text strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-md);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.text > span {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+.text > .meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-3);
+  font-size: var(--t-xs);
+}
+.diet {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: var(--s-3);
+}
+
+.sheet {
+  display: grid;
+  gap: var(--s-5);
+}
+.summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+.amount {
+  display: grid;
+  gap: var(--s-3);
+}
+.amount label {
+  font-size: var(--t-sm);
+  font-weight: 600;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.stepper button:not(.all) {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--ink);
+}
+.stepper button:disabled {
+  opacity: 0.4;
+}
+.stepper input {
+  width: 84px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-lg);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.stepper input:focus-visible {
+  outline: 2px solid var(--basil);
+  outline-offset: 1px;
+}
+.unit {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+.all {
+  margin-left: auto;
+  color: var(--basil);
+  font-size: var(--t-sm);
+  font-weight: 600;
+}
+.gives {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+.error {
+  margin: 0;
+  color: var(--red);
+  font-size: var(--t-sm);
+}
+.sheetText {
+  margin: 0 0 var(--s-3);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+
+@media (max-width: 639px) {
+  .row {
+    flex-wrap: wrap;
+    gap: var(--s-3);
+  }
+  .row > img {
+    width: 56px !important;
+    height: 56px !important;
+  }
+  .text {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .row > button {
+    flex: 1 0 100%;
+  }
+}

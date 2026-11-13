@@ -1,0 +1,10 @@
+node_modules/
+dist/
+target/
+.idea/
+*.log
+.env
+.claude/
+.playwright-mcp/
+.playwright-cli/
+backend/uploads/

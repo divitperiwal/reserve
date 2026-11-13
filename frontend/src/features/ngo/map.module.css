@@ -1,0 +1,127 @@
+.page {
+  position: relative;
+  height: calc(100dvh - var(--tabbar-h) - env(safe-area-inset-bottom));
+  isolation: isolate;
+}
+@media (min-width: 1024px) {
+  .page {
+    height: 100dvh;
+  }
+}
+
+.card {
+  position: absolute;
+  z-index: 500;
+  left: var(--s-3);
+  right: var(--s-3);
+  bottom: var(--s-3);
+  display: grid;
+  gap: var(--s-2);
+  max-height: 44%;
+  overflow-y: auto;
+  padding: var(--s-4);
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--shadow-3);
+}
+@media (min-width: 1024px) {
+  .card {
+    top: var(--s-4);
+    left: var(--s-4);
+    right: auto;
+    bottom: var(--s-4);
+    width: 360px;
+    max-height: none;
+    align-content: start;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.title {
+  font-size: var(--t-lg);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: var(--fill);
+  color: var(--ink-2);
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+.empty {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+.list {
+  display: grid;
+  margin: 0 calc(var(--s-2) * -1);
+  padding: 0;
+  list-style: none;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 60px;
+  padding: 6px var(--s-2);
+  border-radius: var(--r-ctl);
+  transition: background-color var(--d-state) var(--ease);
+}
+.item:active {
+  background: var(--fill);
+}
+@media (hover: hover) {
+  .item:hover {
+    background: rgb(120 120 128 / 0.08);
+  }
+}
+.itemText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.itemText strong {
+  font-weight: 560;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.itemText span {
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+.eta {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: var(--basil-soft);
+  color: var(--basil-ink);
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+.eta strong {
+  font-size: var(--t-md);
+  font-weight: 700;
+}
+.more {
+  justify-self: start;
+  color: var(--basil);
+  font-size: var(--t-sm);
+  font-weight: 560;
+}

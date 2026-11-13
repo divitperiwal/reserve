@@ -1,0 +1,39 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: reserve
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/reserve}
+    username: ${DB_USER:reserve}
+    password: ${DB_PASSWORD:reserve}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  mvc:
+    async:
+      request-timeout: -1
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:reserve-dev-secret-change-me-0123456789abcdef}
+    ttl-hours: 168
+  otp:
+    dev: ${APP_OTP_DEV:true}
+  upload-dir: ${APP_UPLOAD_DIR:./uploads}
+  zone: Asia/Kolkata
+  cors-origin: ${APP_CORS_ORIGINS:http://localhost:*,http://127.0.0.1:*}

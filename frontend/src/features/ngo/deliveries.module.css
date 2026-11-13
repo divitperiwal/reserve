@@ -1,0 +1,144 @@
+.filters > div {
+  display: grid;
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .filters > div {
+    display: inline-grid;
+    width: auto;
+  }
+}
+.block {
+  display: grid;
+  gap: var(--s-4);
+}
+.count {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+.quiet {
+  padding: var(--s-5);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+.impact {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-5) var(--s-4);
+  margin: 0;
+}
+.impact div {
+  display: grid;
+  gap: 2px;
+}
+.impact dt {
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+.impact dd {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Received table */
+.table {
+  display: grid;
+}
+.thead,
+.tr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0 var(--s-5);
+}
+.thead {
+  display: none;
+}
+.tr {
+  min-height: 64px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 767px) {
+  .thead + .tr {
+    border-top: 0;
+  }
+}
+.tr > :nth-child(2),
+.tr > :nth-child(3),
+.tr > :nth-child(4),
+.tr > :nth-child(5) {
+  display: none;
+}
+@media (min-width: 768px) {
+  .thead,
+  .tr {
+    grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) 0.6fr 1fr 0.8fr;
+  }
+  .thead {
+    display: grid;
+    height: 40px;
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-size: var(--t-xs);
+    font-weight: 560;
+  }
+  .tr > :nth-child(2),
+  .tr > :nth-child(3),
+  .tr > :nth-child(4),
+  .tr > :nth-child(5) {
+    display: block;
+  }
+  .phoneOnly {
+    display: none;
+  }
+}
+.cellMuted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+.food {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+}
+.food > span {
+  display: grid;
+  min-width: 0;
+}
+.food strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 560;
+}
+.food em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: normal;
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+.num {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.timing {
+  justify-self: start;
+}
+
+.more {
+  display: grid;
+  justify-items: center;
+  padding: var(--s-4);
+  border-top: 1px solid var(--line);
+}
