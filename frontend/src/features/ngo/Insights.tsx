@@ -2,8 +2,9 @@ import { useState, type CSSProperties } from 'react';
 import { Download } from 'lucide-react';
 import { Avatar, Button, Segmented, Skeleton } from '../../components/ui';
 import { Columns, Kpi, KpiRow, Page, Panel, Topbar } from '../../components/dash';
-import { api } from '../../lib/api';
+import { api, shownError } from '../../lib/api';
 import { categoryLabel, num } from '../../lib/format';
+import { useT } from '../../lib/i18n';
 import { slotWords } from '../../lib/forecast';
 import { categoryImage } from '../../lib/food';
 import { BarChart } from './BarChart';
@@ -12,6 +13,7 @@ import { asPct, useDashboard, weight, type Days } from './useDashboard';
 import p from './page.module.css';
 
 export function Insights() {
+  const t = useT();
   const [days, setDays] = useState<Days>(7);
   const { data, error, refresh } = useDashboard(days);
   const surplus = useSurplus(56);
@@ -20,11 +22,11 @@ export function Insights() {
   const f = data?.funnel;
   const funnel = f
     ? [
-        { label: 'Posted', value: f.posted },
-        { label: 'Claimed', value: f.claimed },
-        { label: 'Picked up', value: f.pickedUp },
-        { label: 'Delivered', value: f.delivered },
-        { label: 'Expired', value: f.expired, lost: true },
+        { label: t('Posted'), value: f.posted },
+        { label: t('Claimed'), value: f.claimed },
+        { label: t('Picked up'), value: f.pickedUp },
+        { label: t('Delivered'), value: f.delivered },
+        { label: t('Expired'), value: f.expired, lost: true },
       ]
     : [];
   const categories = data ? [...data.categories].sort((a, b) => b.pct - a.pct) : [];
@@ -32,21 +34,21 @@ export function Insights() {
   return (
     <Page>
       <Topbar
-        title="Insights"
-        subtitle={`Last ${days} days`}
+        title={t('Insights')}
+        subtitle={t('Last {n} days', { n: days })}
         actions={
           <>
             <Segmented
-              label="Period"
+              label={t('Period')}
               value={days}
               onChange={setDays}
               options={[
-                { value: 7, label: '7 days' },
-                { value: 30, label: '30 days' },
+                { value: 7, label: t('{n} days', { n: 7 }) },
+                { value: 30, label: t('{n} days', { n: 30 }) },
               ]}
             />
             <Button variant="secondary" size="sm" icon={<Download size={16} strokeWidth={2} aria-hidden />} onClick={() => window.open(api.exportUrl(days), '_blank')}>
-              Export CSV
+              {t('Export CSV')}
             </Button>
           </>
         }
@@ -54,25 +56,25 @@ export function Insights() {
 
       {!data && error && (
         <div className={p.inlineError}>
-          <span>Couldn’t load insights. {error}</span>
+          <span>{t('Couldn’t load insights.')} {shownError(error, t)}</span>
           <Button variant="secondary" size="sm" onClick={refresh}>
-            Try again
+            {t('Try again')}
           </Button>
         </div>
       )}
 
       <KpiRow>
-        <Kpi label="Meals rescued" value={data ? num(data.mealsRescued) : '–'} />
-        <Kpi label="Food diverted" value={kg} unit={kgUnit} />
-        <Kpi label="CO₂e avoided" value={co2} unit={co2Unit} />
-        <Kpi label="Median pickup" value={data ? Math.round(data.medianPickupMinutes) : '–'} unit="min" />
+        <Kpi label={t('Meals rescued')} value={data ? num(data.mealsRescued) : '–'} />
+        <Kpi label={t('Food diverted')} value={kg} unit={kgUnit} />
+        <Kpi label={t('CO₂e avoided')} value={co2} unit={co2Unit} />
+        <Kpi label={t('Median pickup')} value={data ? Math.round(data.medianPickupMinutes) : '–'} unit={t('min')} />
       </KpiRow>
 
       <Columns
         main={
           <>
-            <Panel title="Meals per day">{data ? <BarChart data={data.perDay} hideCaption /> : <Skeleton h={220} r={12} />}</Panel>
-            <Panel title="From post to plate" action={data && <span className={p.note}>{Math.round(asPct(data.deliveredBeforeExpiryPct))}% delivered before expiry</span>}>
+            <Panel title={t('Meals per day')}>{data ? <BarChart data={data.perDay} hideCaption /> : <Skeleton h={220} r={12} />}</Panel>
+            <Panel title={t('From post to plate')} action={data && <span className={p.note}>{t('{n}% delivered before expiry', { n: Math.round(asPct(data.deliveredBeforeExpiryPct)) })}</span>}>
               {!data ? (
                 <Skeleton h={180} r={12} />
               ) : (
@@ -87,30 +89,28 @@ export function Insights() {
                 </ul>
               )}
             </Panel>
-            <Panel title="Expected surplus" action={<span className={p.note}>A pattern from past posts, not a promise</span>} flush>
+            <Panel title={t('Expected surplus')} action={<span className={p.note}>{t('A pattern from past posts, not a promise')}</span>} flush>
               {!surplus.data ? (
                 surplus.error ? (
-                  <p className={p.quiet}>Couldn’t load the forecast.</p>
+                  <p className={p.quiet}>{t('Couldn’t load the forecast.')}</p>
                 ) : (
                   <div className={p.pad}>
                     <Skeleton h={120} r={12} />
                   </div>
                 )
               ) : surplus.data.forecast.length === 0 ? (
-                <p className={p.quiet}>No pattern yet. Donors who post in the same slot on two or more weeks appear here.</p>
+                <p className={p.quiet}>{t('No pattern yet. Donors who post in the same slot on two or more weeks appear here.')}</p>
               ) : (
                 <ul className={p.forecast}>
                   {surplus.data.forecast.map((f) => (
                     <li key={`${f.donorId}-${f.from}`}>
                       <span className={p.forecastText}>
                         <strong>{f.donorName}</strong>
-                        <span>{slotWords(f.from, f.until)}</span>
-                        <em>
-                          seen {f.weeksSeen} of last {f.weeksLooked} weeks
-                        </em>
+                        <span>{slotWords(f.from, f.until, t)}</span>
+                        <em>{t('seen {seen} of last {total} weeks', { seen: f.weeksSeen, total: f.weeksLooked })}</em>
                       </span>
                       <span className={p.forecastMeals}>
-                        <strong>{num(f.expectedMeals)}</strong> meals
+                        <strong>{num(f.expectedMeals)}</strong> {t('meals')}
                       </span>
                     </li>
                   ))}
@@ -121,7 +121,7 @@ export function Insights() {
         }
         side={
           <>
-            <Panel title="What comes in" flush>
+            <Panel title={t('What comes in')} flush>
               {!data ? (
                 <div className={p.pad}>
                   <Skeleton h={120} r={12} />
@@ -132,7 +132,7 @@ export function Insights() {
                     <li key={c.category}>
                       <img src={categoryImage(c.category)} alt="" width={40} height={40} loading="lazy" />
                       <span className={p.catText}>
-                        <strong>{categoryLabel[c.category]}</strong>
+                        <strong>{t(categoryLabel[c.category])}</strong>
                         <Bar value={asPct(c.pct)} max={100} />
                       </span>
                       <span className={p.num}>{Math.round(asPct(c.pct))}%</span>
@@ -141,13 +141,13 @@ export function Insights() {
                 </ul>
               )}
             </Panel>
-            <Panel title="Top volunteers" flush>
+            <Panel title={t('Top volunteers')} flush>
               {!data ? (
                 <div className={p.pad}>
                   <Skeleton h={40} />
                 </div>
               ) : data.topVolunteers.length === 0 ? (
-                <p className={p.quiet}>Volunteers who deliver to you appear here.</p>
+                <p className={p.quiet}>{t('Volunteers who deliver to you appear here.')}</p>
               ) : (
                 <ol className={p.people}>
                   {data.topVolunteers.map((v, i) => (
@@ -156,7 +156,7 @@ export function Insights() {
                       <Avatar initials={v.initials} size={32} />
                       <span className={p.personText}>
                         <strong>{v.name}</strong>
-                        <em>{v.pickups} pickups</em>
+                        <em>{t('{n} pickups', { n: v.pickups })}</em>
                       </span>
                       <span className={p.num}>{num(v.meals)}</span>
                     </li>

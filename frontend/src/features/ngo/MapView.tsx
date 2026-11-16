@@ -6,6 +6,7 @@ import { Segmented } from '../../components/ui';
 import { LiveMap, type Pin } from '../../components/map/LiveMap';
 import { FoodThumb } from '../../components/dash';
 import { useAuth } from '../../lib/auth';
+import { useT } from '../../lib/i18n';
 import { pointRadius } from '../../lib/forecast';
 import { etaMinutes, firstName, useOnTheWay } from './useDeliveries';
 import { useSurplus } from './useSurplus';
@@ -17,6 +18,7 @@ const OVERLAY = 376;
 export function MapView() {
   const { user } = useAuth();
   const { list } = useOnTheWay();
+  const t = useT();
   const [history, setHistory] = useState(false);
   const [days, setDays] = useState<30 | 56>(56);
   const surplus = useSurplus(days, history);
@@ -24,7 +26,7 @@ export function MapView() {
   const wide = window.matchMedia('(min-width: 1024px)').matches;
   const kitchen = { lat: user?.lat ?? 12.9, lng: user?.lng ?? 80.1 };
 
-  const pins: Pin[] = [{ id: 'ngo', lat: kitchen.lat, lng: kitchen.lng, kind: 'ngo', label: 'You' }];
+  const pins: Pin[] = [{ id: 'ngo', lat: kitchen.lat, lng: kitchen.lng, kind: 'ngo', label: t('You') }];
   list.forEach((d) => {
     const at = d.lastLocation ?? (d.status === 'PICKED_UP' ? null : { lat: d.lat, lng: d.lng });
     if (d.status === 'CLAIMED') pins.push({ id: `donor-${d.id}`, lat: d.lat, lng: d.lng, kind: 'donor' });
@@ -50,44 +52,44 @@ export function MapView() {
       <div className={s.history}>
         <button type="button" className={s.historyBtn} aria-pressed={history} onClick={() => setHistory((h) => !h)}>
           <Flame size={16} strokeWidth={1.75} aria-hidden />
-          History
+          {t('History')}
         </button>
         {history && (
           <>
             <div className={s.period}>
               <Segmented
-                label="History period"
+                label={t('History period')}
                 value={days}
                 onChange={setDays}
                 options={[
-                  { value: 30, label: '30 days' },
-                  { value: 56, label: '56 days' },
+                  { value: 30, label: t('{n} days', { n: 30 }) },
+                  { value: 56, label: t('{n} days', { n: 56 }) },
                 ]}
               />
             </div>
-            <ul className={s.legend} aria-label="Legend">
+            <ul className={s.legend} aria-label={t('Legend')}>
               <li>
                 <span className={s.dot} data-kind="rescued" aria-hidden />
-                Rescued
+                {t('Rescued')}
               </li>
               <li>
                 <span className={s.dot} data-kind="expired" aria-hidden />
-                Expired
+                {t('Expired')}
               </li>
             </ul>
-            {surplus.error && <p className={s.historyError}>Couldn’t load history.</p>}
+            {surplus.error && <p className={s.historyError}>{t('Couldn’t load history.')}</p>}
           </>
         )}
       </div>
-      <section className={s.card} aria-label="Arriving deliveries">
+      <section className={s.card} aria-label={t('Arriving deliveries')}>
         <header className={s.head}>
-          <h1 className={s.title}>Arriving</h1>
+          <h1 className={s.title}>{t('Arriving')}</h1>
           <span className={s.count}>{list.length}</span>
         </header>
         {list.length === 0 ? (
           <p className={s.empty}>
             <Bike size={18} strokeWidth={1.75} aria-hidden />
-            No one is heading here right now.
+            {t('No one is heading here right now.')}
           </p>
         ) : (
           <ul className={s.list}>
@@ -98,11 +100,11 @@ export function MapView() {
                   <span className={s.itemText}>
                     <strong>{d.title}</strong>
                     <span>
-                      {d.volunteer ? firstName(d.volunteer.name) : 'Volunteer'}, {d.status === 'PICKED_UP' ? 'on the way' : 'picking up'}
+                      {d.volunteer ? firstName(d.volunteer.name) : t('Volunteer')}, {d.status === 'PICKED_UP' ? t('on the way') : t('picking up')}
                     </span>
                   </span>
                   <span className={s.eta}>
-                    <strong>{etaMinutes(d, kitchen)}</strong> min
+                    <strong>{etaMinutes(d, kitchen)}</strong> {t('min')}
                   </span>
                 </Link>
               </li>
@@ -110,7 +112,7 @@ export function MapView() {
           </ul>
         )}
         <Link to="/ngo/deliveries" className={s.more}>
-          All deliveries
+          {t('All deliveries')}
         </Link>
       </section>
     </div>

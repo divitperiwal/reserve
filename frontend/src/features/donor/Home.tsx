@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Soup } from 'lucide-react';
 import { Avatar, Badge, Button, ButtonLink, EmptyState, Skeleton } from '../../components/ui';
 import { Columns, Kpi, KpiRow, Page, Panel, SectionHead, Topbar } from '../../components/dash';
-import { api } from '../../lib/api';
+import { api, shownError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { foodImage } from '../../lib/food';
 import { haversineKm, km, num, qty, statusLabel, tonnes } from '../../lib/format';
@@ -49,7 +49,7 @@ export default function Home() {
 
       {!items && error ? (
         <EmptyState icon={Soup} title={t('Couldn’t load your donations')} action={<Button variant="secondary" onClick={reload}>{t('Try again')}</Button>}>
-          {error}
+          {shownError(error, t)}
         </EmptyState>
       ) : (
         <Columns
@@ -124,7 +124,7 @@ function LiveCard({ d, onOpen }: { d: Donation; onOpen: () => void }) {
       <span className={s.liveMedia}>
         <img src={foodImage(d)} alt="" />
         <Badge tone="white" className={s.liveBadge}>
-          {statusLabel[d.status]}
+          {t(statusLabel[d.status])}
         </Badge>
       </span>
       <span className={s.liveBody}>
@@ -139,7 +139,7 @@ function LiveCard({ d, onOpen }: { d: Donation; onOpen: () => void }) {
               {d.volunteer.name}
             </span>
           ) : (
-            <span className={s.who}>{qty(d)}</span>
+            <span className={s.who}>{qty(d, t)}</span>
           )}
           {waiting ? <PickupCloses to={d.pickupUntil} className={s.liveTime} /> : <span className={s.trackLink}>{t('Track')}</span>}
         </span>

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import { AlertCircle, Camera, Trash2 } from 'lucide-react';
-import { api } from '../../lib/api';
+import { api, shownError } from '../../lib/api';
 import { useT } from '../../lib/i18n';
 import s from './PostFood.module.css';
 
@@ -102,7 +102,7 @@ export default function PhotoDrop({ url, onChange, onUploading }: { url: string;
       />
       {error && (
         <span id={`${id}-err`} className={s.inlineError} role="alert">
-          <AlertCircle size={14} aria-hidden /> {error}
+          <AlertCircle size={14} aria-hidden /> {shownError(error, t)}
         </span>
       )}
     </div>

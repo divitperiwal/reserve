@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import { Avatar, Logo } from '../ui';
+import { useT } from '../../lib/i18n';
 import s from './shell.module.css';
 
 export interface NavItem {
@@ -27,12 +28,13 @@ const navClass = (base: string, active: string) => ({ isActive }: { isActive: bo
 
 // Slim sidebar on desktop, translucent tab bar on phones
 export function AppShell({ home, nav, account, action, hideTabs, children }: AppShellProps) {
+  const t = useT();
   const tabs = nav.filter((n) => n.tab !== false);
   return (
     <div className={s.app}>
       <aside className={s.sidebar}>
         <Logo to={home} size={26} className={s.logo} />
-        <nav aria-label="Main" className={s.nav}>
+        <nav aria-label={t('Main')} className={s.nav}>
           {nav.filter((n) => n.sidebar !== false).map(({ to, label, icon: Icon, end, count }) => (
             <NavLink key={to} to={to} end={end} className={navClass(s.link, s.linkActive)}>
               <Icon size={18} strokeWidth={1.75} aria-hidden />
@@ -55,7 +57,7 @@ export function AppShell({ home, nav, account, action, hideTabs, children }: App
 
       <main className={s.main}>{children}</main>
 
-      {!hideTabs && <nav aria-label="Main" className={s.tabbar} style={{ '--tabs': tabs.length } as CSSProperties}>
+      {!hideTabs && <nav aria-label={t('Main')} className={s.tabbar} style={{ '--tabs': tabs.length } as CSSProperties}>
         {tabs.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className={navClass(s.tab, s.tabActive)}>
             <Icon size={24} strokeWidth={1.75} aria-hidden />

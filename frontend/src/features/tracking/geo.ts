@@ -1,4 +1,5 @@
 import { haversineKm } from '../../lib/format';
+import { fill, type T } from '../../lib/i18n';
 import { remainingKm, type RoadRoute } from '../../lib/route';
 import type { Donation, GeoPoint, Status } from '../../lib/types';
 
@@ -19,12 +20,12 @@ export const etaMin = (distKm: number) => Math.max(1, Math.round((distKm / SPEED
 
 export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
-export function span(ms: number): string {
+export function span(ms: number, t: T = fill): string {
   const total = Math.max(0, Math.round(ms / 60_000));
   const h = Math.floor(total / 60);
   const m = total % 60;
-  if (!h) return `${m}m`;
-  return `${h}h ${String(m).padStart(2, '0')}m`;
+  if (!h) return t('{m}m', { m });
+  return t('{h}h {m}m', { h, m: String(m).padStart(2, '0') });
 }
 
 export function nextStop(d: Donation): Stop | null {

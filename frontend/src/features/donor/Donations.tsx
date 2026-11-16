@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Soup } from 'lucide-react';
 import { Button, ButtonLink, EmptyState, Segmented, Skeleton } from '../../components/ui';
 import { Kpi, KpiRow, Page, Panel, Topbar } from '../../components/dash';
+import { shownError } from '../../lib/api';
 import { num } from '../../lib/format';
 import { useT } from '../../lib/i18n';
 import type { Donation } from '../../lib/types';
@@ -60,7 +61,7 @@ export default function Donations() {
 
       {!items && error ? (
         <EmptyState icon={Soup} title={t('Couldn’t load your donations')} action={<Button variant="secondary" onClick={reload}>{t('Try again')}</Button>}>
-          {error}
+          {shownError(error, t)}
         </EmptyState>
       ) : (
         <>

@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Check, Phone } from 'lucide-react';
 import { Avatar, Button, RiskBadge, Skeleton, useToast } from '../../components/ui';
-import { api } from '../../lib/api';
+import { api, shownError } from '../../lib/api';
 import { homeFor, useAuth } from '../../lib/auth';
 import { qty } from '../../lib/format';
+import { useT, type T } from '../../lib/i18n';
 import type { Donation } from '../../lib/types';
 import { CodeSheet } from './codes';
 import { FlowSteps, flowStep } from './FlowSteps';
@@ -14,25 +15,25 @@ import { RouteMap } from './RouteMap';
 import { useLegRoute, useTracking } from './useTracking';
 import s from './stage.module.css';
 
-const first = (name?: string) => name?.split(/\s+/)[0] ?? 'The volunteer';
+const first = (name?: string) => name?.split(/\s+/)[0];
 
-function headline(d: Donation) {
-  const who = first(d.volunteer?.name);
+function headline(d: Donation, t: T) {
+  const who = first(d.volunteer?.name) ?? t('The volunteer');
   switch (d.status) {
     case 'AVAILABLE':
-      return 'Waiting for a kitchen';
+      return t('Waiting for a kitchen');
     case 'ACCEPTED':
-      return 'Waiting for a volunteer';
+      return t('Waiting for a volunteer');
     case 'CLAIMED':
-      return `${who} is heading to ${d.donor.name}`;
+      return t('{who} is heading to {name}', { who, name: d.donor.name });
     case 'PICKED_UP':
-      return `${who} is bringing it to ${d.ngo?.name ?? 'the kitchen'}`;
+      return t('{who} is bringing it to {name}', { who, name: d.ngo?.name ?? t('the kitchen') });
     case 'DELIVERED':
-      return 'Delivered';
+      return t('Delivered');
     case 'EXPIRED':
-      return 'This donation expired';
+      return t('This donation expired');
     default:
-      return 'This donation was cancelled';
+      return t('This donation was cancelled');
   }
 }
 
@@ -41,6 +42,7 @@ export default function TrackPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+  const t = useT();
   const [codeOpen, setCodeOpen] = useState(false);
   const { donation: d, trail, error, update, retry } = useTracking(id);
   const route = useLegRoute(d, trail);
@@ -53,12 +55,12 @@ export default function TrackPage() {
     return (
       <div className={s.center}>
         <div className={s.done}>
-          <h1 className={s.title}>Couldn’t load this pickup</h1>
-          <p className={s.sub}>{error}</p>
+          <h1 className={s.title}>{t('Couldn’t load this pickup')}</h1>
+          <p className={s.sub}>{shownError(error, t)}</p>
           <div className={s.pair}>
-            <Button onClick={retry}>Try again</Button>
+            <Button onClick={retry}>{t('Try again')}</Button>
             <Button variant="secondary" onClick={back}>
-              Go back
+              {t('Go back')}
             </Button>
           </div>
         </div>
@@ -67,7 +69,7 @@ export default function TrackPage() {
 
   if (!d)
     return (
-      <MapStage map={null} onBack={back} backLabel="Back">
+      <MapStage map={null} onBack={back} backLabel={t('Back')}>
         <div className={s.skeleton} aria-busy="true">
           <Skeleton w="70%" h={28} />
           <Skeleton w="40%" h={48} />
@@ -84,38 +86,38 @@ export default function TrackPage() {
   const confirm = async (code: string) => {
     const next = isDonor ? await api.confirmPickup(d.id, code) : await api.confirmDelivery(d.id, code);
     update(next);
-    toast(isDonor ? 'Pickup confirmed' : 'Delivery confirmed. Thank you.');
+    toast(isDonor ? t('Pickup confirmed') : t('Delivery confirmed. Thank you.'));
   };
 
   return (
-    <MapStage map={<RouteMap d={d} trail={trail} route={route} />} onBack={back} backLabel="Back">
+    <MapStage map={<RouteMap d={d} trail={trail} route={route} />} onBack={back} backLabel={t('Back')}>
       {d.status === 'DELIVERED' ? (
         <div className={s.done}>
           <span className={s.doneIcon}>
             <Check size={28} strokeWidth={2.5} aria-hidden />
           </span>
           <div className={s.head}>
-            <h1 className={s.title}>Delivered</h1>
+            <h1 className={s.title}>{t('Delivered')}</h1>
             <p className={s.sub}>
-              {d.title}, {qty(d)}, reached {d.ngo?.name ?? 'the kitchen'}. That’s about {d.meals} meals.
+              {t('{title}, {qty}, reached {ngo}. That’s about {meals} meals.', { title: d.title, qty: qty(d, t), ngo: d.ngo?.name ?? t('the kitchen'), meals: d.meals })}
             </p>
           </div>
         </div>
       ) : (
         <>
           <div className={s.head}>
-            <h1 className={s.title}>{headline(d)}</h1>
+            <h1 className={s.title}>{headline(d, t)}</h1>
             <p className={s.sub}>
-              {d.title}, {qty(d)}
+              {t('{title}, {qty}', { title: d.title, qty: qty(d, t) })}
             </p>
           </div>
 
           {eta && (
             <div className={s.eta}>
               <span className={s.etaNum}>{eta.min}</span>
-              <span className={s.etaUnit}>min</span>
+              <span className={s.etaUnit}>{t('min')}</span>
               <span className={s.etaMeta}>
-                {eta.km.toFixed(1)} km to {eta.stop.name}
+                {t('{km} km to {name}', { km: eta.km.toFixed(1), name: eta.stop.name })}
               </span>
             </div>
           )}
@@ -136,9 +138,9 @@ export default function TrackPage() {
               <Avatar initials={d.volunteer.initials} size={44} tone="basil" />
               <span className={s.personText}>
                 <span className={s.personName}>{d.volunteer.name}</span>
-                <span className={s.personMeta}>{d.volunteer.vehicle ?? 'Volunteer'}</span>
+                <span className={s.personMeta}>{d.volunteer.vehicle ? t(d.volunteer.vehicle) : t('Volunteer')}</span>
               </span>
-              <a className={s.call} href={`tel:+91${d.volunteer.phone}`} aria-label={`Call ${d.volunteer.name}`}>
+              <a className={s.call} href={`tel:+91${d.volunteer.phone}`} aria-label={t('Call {name}', { name: d.volunteer.name })}>
                 <Phone size={18} strokeWidth={2} aria-hidden />
               </a>
             </div>
@@ -147,9 +149,9 @@ export default function TrackPage() {
           {canConfirm && (
             <div className={s.actions}>
               <Button size="lg" block onClick={() => setCodeOpen(true)}>
-                {isDonor ? 'Confirm pickup' : 'Confirm delivery'}
+                {isDonor ? t('Confirm pickup') : t('Confirm delivery')}
               </Button>
-              <p className={s.note}>Ask {first(d.volunteer?.name)} for the 4-digit code.</p>
+              <p className={s.note}>{t('Ask {name} for the 4-digit code.', { name: first(d.volunteer?.name) ?? t('the volunteer') })}</p>
             </div>
           )}
         </>
@@ -159,8 +161,8 @@ export default function TrackPage() {
         open={codeOpen}
         donationId={d.id}
         onClose={() => setCodeOpen(false)}
-        title={isDonor ? 'Confirm pickup' : 'Confirm delivery'}
-        hint={`Enter the code ${first(d.volunteer?.name)} shows you.`}
+        title={isDonor ? t('Confirm pickup') : t('Confirm delivery')}
+        hint={t('Enter the code {name} shows you.', { name: first(d.volunteer?.name) ?? t('the volunteer') })}
         onSubmit={confirm}
       />
     </MapStage>

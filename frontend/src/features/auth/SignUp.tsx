@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Bike, Building2, Check, LocateFixed, Store, type LucideIcon } from 'lucide-react';
 import { Button, Chip, Field, Progress, labelClass } from '../../components/ui';
-import { api } from '../../lib/api';
+import { api, shownError } from '../../lib/api';
 import { currentPosition } from '../../lib/format';
 import { useT } from '../../lib/i18n';
 import type { Role } from '../../lib/types';
@@ -84,7 +84,7 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
       setCoords(pos);
       if (!address.trim()) setAddress(`Near ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`);
     } catch (err) {
-      setErrors((e) => ({ ...e, address: (err as Error).message }));
+      setErrors((e) => ({ ...e, address: shownError((err as Error).message, t) }));
     } finally {
       setLocating(false);
     }

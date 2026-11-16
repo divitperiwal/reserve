@@ -1,5 +1,6 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { num } from '../../lib/format';
+import { dateLocale, useT } from '../../lib/i18n';
 import s from './chart.module.css';
 
 interface Point {
@@ -12,11 +13,12 @@ function parseDay(iso: string) {
   return new Date(y!, (m ?? 1) - 1, d ?? 1);
 }
 
-const weekday = (d: Date) => d.toLocaleDateString('en-IN', { weekday: 'short' });
-const longDay = (d: Date) => d.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' });
+const weekday = (d: Date) => d.toLocaleDateString(dateLocale(), { weekday: 'short' });
+const longDay = (d: Date) => d.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'short' });
 const isToday = (d: Date) => d.toDateString() === new Date().toDateString();
 
 export function BarChart({ data, hideCaption }: { data: Point[]; hideCaption?: boolean }) {
+  const t = useT();
   const n = data.length;
   const last = Math.max(0, n - 1);
   const [active, setActive] = useState<number | null>(null);
@@ -46,13 +48,13 @@ export function BarChart({ data, hideCaption }: { data: Point[]; hideCaption?: b
 
   return (
     <figure className={s.figure}>
-      <figcaption className={hideCaption ? 'sr-only' : s.caption}>Meals per day</figcaption>
+      <figcaption className={hideCaption ? 'sr-only' : s.caption}>{t('Meals per day')}</figcaption>
       <p className="sr-only">
-        {`${num(total)} meals over the last ${n} days. Busiest day was ${longDay(parseDay(peak.date))} with ${num(peak.meals)} meals.`}
+        {t('{total} meals over the last {n} days. Busiest day was {day} with {peak} meals.', { total: num(total), n, day: longDay(parseDay(peak.date)), peak: num(peak.meals) })}
       </p>
 
       <div className={s.plot} onPointerLeave={() => setActive(null)}>
-        <div className={s.bars} role="group" aria-label="Meals per day. Use the arrow keys to move between days." onKeyDown={onKeyDown}>
+        <div className={s.bars} role="group" aria-label={t('Meals per day. Use the arrow keys to move between days.')} onKeyDown={onKeyDown}>
           {data.map((p, i) => (
             <button
               key={p.date}
@@ -62,7 +64,7 @@ export function BarChart({ data, hideCaption }: { data: Point[]; hideCaption?: b
               type="button"
               className={s.col}
               tabIndex={i === current ? 0 : -1}
-              aria-label={`${longDay(parseDay(p.date))}, ${num(p.meals)} meals`}
+              aria-label={t('{day}, {meals} meals', { day: longDay(parseDay(p.date)), meals: num(p.meals) })}
               data-hi={hi === i || undefined}
               onPointerEnter={() => setActive(i)}
               onClick={() => setActive(i)}
@@ -84,7 +86,7 @@ export function BarChart({ data, hideCaption }: { data: Point[]; hideCaption?: b
           aria-hidden
         >
           <strong>{num(hiPoint.meals)}</strong>
-          {active !== null && <span>{isToday(parseDay(hiPoint.date)) ? 'Today' : longDay(parseDay(hiPoint.date))}</span>}
+          {active !== null && <span>{isToday(parseDay(hiPoint.date)) ? t('Today') : longDay(parseDay(hiPoint.date))}</span>}
         </div>
       </div>
 
@@ -93,18 +95,18 @@ export function BarChart({ data, hideCaption }: { data: Point[]; hideCaption?: b
           const d = parseDay(p.date);
           return (
             <span key={p.date} data-hi={hi === i || undefined}>
-              {isToday(d) ? 'Today' : weekday(d)}
+              {isToday(d) ? t('Today') : weekday(d)}
             </span>
           );
         })}
       </div>
 
       <table className="sr-only">
-        <caption>Meals rescued per day</caption>
+        <caption>{t('Meals rescued per day')}</caption>
         <thead>
           <tr>
-            <th scope="col">Day</th>
-            <th scope="col">Meals</th>
+            <th scope="col">{t('Day')}</th>
+            <th scope="col">{t('Meals')}</th>
           </tr>
         </thead>
         <tbody>

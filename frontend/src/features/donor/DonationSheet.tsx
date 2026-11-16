@@ -174,7 +174,7 @@ export function DonationSheet({ d, onClose }: { d: Donation | null; onClose: () 
           )}
 
           <Group>
-            <Row title={t('Amount')} trailing={qty(d)} />
+            <Row title={t('Amount')} trailing={qty(d, t)} />
             {d.ngo && <Row title={t('Kitchen')} trailing={d.ngo.name} />}
             <Row title={t('Best before')} trailing={clockTime(d.bestBefore)} />
             <Row title={t('Pickup window')} trailing={pickupWindow(d.pickupFrom, d.pickupUntil, t)} />

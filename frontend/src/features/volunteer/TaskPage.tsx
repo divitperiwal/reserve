@@ -4,23 +4,25 @@ import { ChevronRight, Moon, Radar } from 'lucide-react';
 import { Avatar, Button, ButtonLink, cx, DietMark, PhoneBadge, RiskBadge, Skeleton } from '../../components/ui';
 import { FoodThumb } from '../../components/dash';
 import { LiveMap, type Pin } from '../../components/map/LiveMap';
+import { shownError } from '../../lib/api';
 import { haversineKm, km, num, qty } from '../../lib/format';
+import { dateLocale, useT, type T } from '../../lib/i18n';
 import { useNow } from '../../lib/time';
 import type { Donation, NgoRef } from '../../lib/types';
 import { etaMin, type LatLng } from '../tracking/geo';
 import { useVolunteer } from './context';
 import { RADIUS_KM, reachable, useClaim, useDevicePosition, useFeed, useMyStats } from './hooks';
 import { PickupSheet } from './PickupSheet';
-import t from './task.module.css';
+import c from './task.module.css';
 
 // Opens 7:30 pm, Opens tomorrow 7:30 pm, Opens Mon 7:30 pm
-function opensLabel(iso: string, now: number) {
+function opensLabel(iso: string, now: number, t: T) {
   const d = new Date(iso);
-  const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+  const time = d.toLocaleTimeString(dateLocale(), { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
   const days = Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date(now).setHours(0, 0, 0, 0)) / 86_400_000);
-  if (days <= 0) return `Opens ${time}`;
-  if (days === 1) return `Opens tomorrow ${time}`;
-  return `Opens ${d.toLocaleDateString('en-IN', { weekday: 'short' })} ${time}`;
+  if (days <= 0) return t('Opens {time}', { time });
+  if (days === 1) return t('Opens tomorrow {time}', { time });
+  return t('Opens {day} {time}', { day: d.toLocaleDateString(dateLocale(), { weekday: 'short' }), time });
 }
 
 // One job at a time: go online, take the next pickup, deliver it
@@ -34,6 +36,7 @@ export default function TaskPage() {
   const { items, error, loading, remove, retry } = useFeed(me, watching);
   const { pending, claim } = useClaim(remove);
   const [details, setDetails] = useState<Donation | null>(null);
+  const t = useT();
 
   const [tick, setTick] = useState(() => Date.now());
   useEffect(() => {
@@ -60,24 +63,24 @@ export default function TaskPage() {
   }
 
   return (
-    <div className={t.page}>
-      <div className={cx(t.map, !online && !active && t.mapOff)}>
+    <div className={c.page}>
+      <div className={cx(c.map, !online && !active && c.mapOff)}>
         <LiveMap pins={pins} remaining={route} radius={online && !active && !offer ? { ...me, km: RADIUS_KM } : undefined} padding={72} />
       </div>
 
-      <header className={t.top}>
-        <Link to="/volunteer/profile" aria-label="Profile">
-          <Avatar initials={user.initials} size={40} tone="basil" className={t.raised} />
+      <header className={c.top}>
+        <Link to="/volunteer/profile" aria-label={t('Profile')}>
+          <Avatar initials={user.initials} size={40} tone="basil" className={c.raised} />
         </Link>
-        <button type="button" className={t.status} data-on={online || undefined} aria-pressed={online} onClick={() => setOnDuty(!online)}>
-          <span className={t.statusDot} aria-hidden />
-          {online ? 'Online' : 'Offline'}
+        <button type="button" className={c.status} data-on={online || undefined} aria-pressed={online} onClick={() => setOnDuty(!online)}>
+          <span className={c.statusDot} aria-hidden />
+          {online ? t('Online') : t('Offline')}
         </button>
         <MonthChip />
       </header>
 
-      <section className={t.card} aria-live="polite">
-        {far && watching && <p className={t.note}>Using your home address</p>}
+      <section className={c.card} aria-live="polite">
+        {far && watching && <p className={c.note}>{t('Using your home address')}</p>}
         {!activeLoaded ? (
           <Loading />
         ) : active ? (
@@ -87,9 +90,9 @@ export default function TaskPage() {
         ) : loading ? (
           <Searching />
         ) : error && !items ? (
-          <Message icon={<Radar size={22} strokeWidth={1.75} aria-hidden />} title="Couldn’t load pickups" text={error}>
+          <Message icon={<Radar size={22} strokeWidth={1.75} aria-hidden />} title={t('Couldn’t load pickups')} text={shownError(error, t)}>
             <Button variant="secondary" size="lg" block onClick={retry}>
-              Try again
+              {t('Try again')}
             </Button>
           </Message>
         ) : offer ? (
@@ -104,10 +107,10 @@ export default function TaskPage() {
             onDetails={() => setDetails(offer)}
           />
         ) : (
-          <Message icon={<Radar size={22} strokeWidth={1.75} aria-hidden />} title="No pickups right now" text="Stay online. The next pickup near you shows up here the moment a donor posts it.">
+          <Message icon={<Radar size={22} strokeWidth={1.75} aria-hidden />} title={t('No pickups right now')} text={t('Stay online. The next pickup near you shows up here the moment a donor posts it.')}>
             {skippedOpen > 0 && (
               <Button variant="secondary" size="lg" block onClick={() => setSkipped([])}>
-                Show skipped ({skippedOpen})
+                {t('Show skipped ({n})', { n: skippedOpen })}
               </Button>
             )}
           </Message>
@@ -119,16 +122,17 @@ export default function TaskPage() {
   );
 }
 
-function pickupLeft(ms: number) {
+function pickupLeft(ms: number, t: T) {
   const m = Math.max(1, Math.ceil(ms / 60_000));
-  return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
+  return m >= 60 ? t('{h}h {m}m', { h: Math.floor(m / 60), m: m % 60 }) : t('{m}m', { m });
 }
 
 function MonthChip() {
   const { stats } = useMyStats();
+  const t = useT();
   return (
-    <Link to="/volunteer/impact" className={t.chip}>
-      <strong>{stats ? num(stats.meals) : '–'}</strong> meals
+    <Link to="/volunteer/impact" className={c.chip}>
+      <strong>{stats ? num(stats.meals) : '–'}</strong> {t('meals')}
     </Link>
   );
 }
@@ -146,63 +150,64 @@ function Offer({ d, drop, me, left, busy, onAccept, onSkip, onDetails }: {
   const toPickup = haversineKm(me, d);
   const toDrop = drop ? haversineKm(d, drop) : 0;
   const now = useNow();
+  const t = useT();
   const closes = new Date(d.pickupUntil).getTime() - now;
   const opensAt = new Date(d.pickupFrom).getTime() > now ? d.pickupFrom : null;
   const critical = !opensAt && closes < 30 * 60_000;
   return (
-    <div className={t.offer} key={d.id}>
-      <div className={t.offerHead}>
-        <span className={t.tag}>New pickup{left > 1 ? `, ${left - 1} more nearby` : ''}</span>
-        <span className={cx(t.timer, critical && t.timerCritical)}>
-          {opensAt ? opensLabel(opensAt, now) : `Pick up within ${pickupLeft(closes)}`}
+    <div className={c.offer} key={d.id}>
+      <div className={c.offerHead}>
+        <span className={c.tag}>{left > 1 ? t('New pickup, {n} more nearby', { n: left - 1 }) : t('New pickup')}</span>
+        <span className={cx(c.timer, critical && c.timerCritical)}>
+          {opensAt ? opensLabel(opensAt, now, t) : t('Pick up within {time}', { time: pickupLeft(closes, t) })}
         </span>
       </div>
 
-      {drop && <p className={t.askedBy}>{drop.name} asked for this</p>}
+      {drop && <p className={c.askedBy}>{t('{ngo} asked for this', { ngo: drop.name })}</p>}
 
       <RiskBadge d={d} from={me} kitchen={drop} />
       <PhoneBadge d={d} />
 
-      <button type="button" className={t.food} onClick={onDetails}>
+      <button type="button" className={c.food} onClick={onDetails}>
         <FoodThumb d={d} size={56} />
-        <span className={t.foodText}>
+        <span className={c.foodText}>
           <strong>{d.title}</strong>
           <span>
-            <DietMark diet={d.diet} /> {d.meals} meals, {qty(d)}
+            <DietMark diet={d.diet} /> {t('{meals} meals, {qty}', { meals: d.meals, qty: qty(d, t) })}
           </span>
         </span>
-        <ChevronRight size={18} strokeWidth={2} className={t.chev} aria-hidden />
+        <ChevronRight size={18} strokeWidth={2} className={c.chev} aria-hidden />
       </button>
 
-      <ol className={t.route}>
+      <ol className={c.route}>
         <li>
-          <span className={t.stopDot} aria-hidden />
-          <span className={t.stopText}>
-            <em>Pick up</em>
+          <span className={c.stopDot} aria-hidden />
+          <span className={c.stopText}>
+            <em>{t('Pick up')}</em>
             <strong>{d.donor.name}</strong>
             <span>{d.address}</span>
           </span>
-          <span className={t.stopKm}>{km(toPickup)}</span>
+          <span className={c.stopKm}>{km(toPickup)}</span>
         </li>
         {drop && (
           <li>
-            <span className={t.stopSquare} aria-hidden />
-            <span className={t.stopText}>
-              <em>Drop</em>
+            <span className={c.stopSquare} aria-hidden />
+            <span className={c.stopText}>
+              <em>{t('Drop')}</em>
               <strong>{drop.name}</strong>
               <span>{drop.address}</span>
             </span>
-            <span className={t.stopKm}>{km(toDrop)}</span>
+            <span className={c.stopKm}>{km(toDrop)}</span>
           </li>
         )}
       </ol>
 
-      <div className={t.actions}>
+      <div className={c.actions}>
         <Button variant="secondary" size="lg" onClick={onSkip}>
-          Skip
+          {t('Skip')}
         </Button>
-        <Button size="lg" className={t.accept} loading={busy} onClick={onAccept}>
-          Accept, about {etaMin(toPickup + toDrop)} min
+        <Button size="lg" className={c.accept} loading={busy} onClick={onAccept}>
+          {t('Accept, about {m} min', { m: etaMin(toPickup + toDrop) })}
         </Button>
       </div>
     </div>
@@ -214,16 +219,17 @@ function ActiveTask({ d, me }: { d: Donation; me: LatLng }) {
   const stop = toDonor ? { name: d.donor.name, address: d.address, lat: d.lat, lng: d.lng } : d.ngo;
   const from = d.lastLocation ?? me;
   const dist = stop ? haversineKm(from, stop) : 0;
+  const t = useT();
   return (
-    <div className={t.offer}>
-      <div className={t.offerHead}>
-        <span className={cx(t.tag, t.tagLive)}>
-          <span className={t.pulse} aria-hidden /> {toDonor ? 'Step 1 of 2, pick up' : 'Step 2 of 2, drop'}
+    <div className={c.offer}>
+      <div className={c.offerHead}>
+        <span className={cx(c.tag, c.tagLive)}>
+          <span className={c.pulse} aria-hidden /> {toDonor ? t('Step 1 of 2, pick up') : t('Step 2 of 2, drop')}
         </span>
-        <span className={t.timer}>{etaMin(dist)} min</span>
+        <span className={c.timer}>{t('{m} min', { m: etaMin(dist) })}</span>
       </div>
-      <div className={t.stopBig}>
-        <h1>{stop?.name ?? 'The kitchen'}</h1>
+      <div className={c.stopBig}>
+        <h1>{stop?.name ?? t('The kitchen')}</h1>
         <p>
           {stop?.address}, {km(dist)}
         </p>
@@ -231,39 +237,41 @@ function ActiveTask({ d, me }: { d: Donation; me: LatLng }) {
       <RiskBadge d={d} from={from} />
       <PhoneBadge d={d} />
 
-      <div className={t.food}>
+      <div className={c.food}>
         <FoodThumb d={d} size={48} />
-        <span className={t.foodText}>
+        <span className={c.foodText}>
           <strong>{d.title}</strong>
           <span>
-            {d.meals} meals, {qty(d)}
+            {t('{meals} meals, {qty}', { meals: d.meals, qty: qty(d, t) })}
           </span>
         </span>
       </div>
       <ButtonLink to={`/volunteer/pickup/${d.id}`} size="lg" block>
-        {toDonor ? 'Go to pickup' : 'Go to drop'}
+        {toDonor ? t('Go to pickup') : t('Go to drop')}
       </ButtonLink>
     </div>
   );
 }
 
 function Offline({ onGo }: { onGo: () => void }) {
+  const t = useT();
   return (
-    <Message icon={<Moon size={22} strokeWidth={1.75} aria-hidden />} title="You’re offline" text="Go online and we’ll send you the pickup nearest to you, one at a time.">
+    <Message icon={<Moon size={22} strokeWidth={1.75} aria-hidden />} title={t('You’re offline')} text={t('Go online and we’ll send you the pickup nearest to you, one at a time.')}>
       <Button size="lg" block onClick={onGo}>
-        Go online
+        {t('Go online')}
       </Button>
     </Message>
   );
 }
 
 function Searching() {
+  const t = useT();
   return (
-    <div className={t.message}>
-      <span className={cx(t.messageIcon, t.searching)}>
+    <div className={c.message}>
+      <span className={cx(c.messageIcon, c.searching)}>
         <Radar size={22} strokeWidth={1.75} aria-hidden />
       </span>
-      <h2>Finding pickups near you</h2>
+      <h2>{t('Finding pickups near you')}</h2>
       <Skeleton h={52} r={26} />
     </div>
   );
@@ -271,7 +279,7 @@ function Searching() {
 
 function Loading() {
   return (
-    <div className={t.message} aria-busy="true">
+    <div className={c.message} aria-busy="true">
       <Skeleton w="60%" h={22} />
       <Skeleton w="85%" h={14} />
       <Skeleton h={52} r={26} />
@@ -281,8 +289,8 @@ function Loading() {
 
 function Message({ icon, title, text, children }: { icon: ReactNode; title: string; text: string; children?: ReactNode }) {
   return (
-    <div className={t.message}>
-      <span className={t.messageIcon}>{icon}</span>
+    <div className={c.message}>
+      <span className={c.messageIcon}>{icon}</span>
       <h2>{title}</h2>
       <p>{text}</p>
       {children}

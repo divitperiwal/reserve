@@ -39,10 +39,10 @@ export function DonationTable({ items, onOpen, empty, label }: { items: Donation
             </span>
           </span>
           <span role="cell">
-            <Badge tone={tone[d.status]}>{statusLabel[d.status]}</Badge> <PhoneBadge d={d} />
+            <Badge tone={tone[d.status]}>{t(statusLabel[d.status])}</Badge> <PhoneBadge d={d} />
           </span>
           <span role="cell" className={s.cellMuted}>
-            {qty(d)}
+            {qty(d, t)}
           </span>
           <span role="cell" className={s.num}>
             {d.status === 'EXPIRED' || d.status === 'CANCELLED' ? '–' : num(d.meals)}

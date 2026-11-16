@@ -16,8 +16,20 @@ import type {
   SurplusMap,
   User,
 } from './types';
+import { LOCATION_DENIED, NO_LOCATION } from './format';
+import type { T } from './i18n';
 
 const TOKEN_KEY = 'reserve.token';
+const OFFLINE = 'Can’t reach ReServe. Check your connection and try again.';
+const UPLOAD_FAILED = 'Upload failed';
+const clientMessages = new Set([OFFLINE, UPLOAD_FAILED, NO_LOCATION, LOCATION_DENIED]);
+
+// Messages raised in the browser are translated where shown; server messages stay as sent
+export function shownError(message: string, t: T) {
+  const failed = /^Request failed \((\d+)\)$/.exec(message);
+  if (failed) return t('Request failed ({status})', { status: failed[1]! });
+  return clientMessages.has(message) ? t(message) : message;
+}
 
 export class ApiError extends Error {
   status: number;
@@ -55,7 +67,7 @@ async function request<T>(method: string, path: string, body?: unknown, token = 
   try {
     res = await fetch(`/api${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   } catch {
-    throw new ApiError(0, 'Can’t reach ReServe. Check your connection and try again.');
+    throw new ApiError(0, OFFLINE);
   }
   if (res.status === 401 && token) {
     tokenStore.set(null);
@@ -132,7 +144,7 @@ export const api = {
     body.append('file', file);
     const res = await fetch('/api/uploads', { method: 'POST', body, headers: { Authorization: `Bearer ${tokenStore.get() ?? ''}` } });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new ApiError(res.status, data.message ?? 'Upload failed', data.fields);
+    if (!res.ok) throw new ApiError(res.status, data.message ?? UPLOAD_FAILED, data.fields);
     return data;
   },
 

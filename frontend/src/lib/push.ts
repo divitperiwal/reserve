@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from './api';
+import { useT } from './i18n';
 
 export function pushSupported() {
   return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
@@ -71,6 +72,7 @@ export interface PushSetting {
 export function usePushSetting(onError: (message: string) => void): PushSetting | null {
   const [on, setOn] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     if (!pushSupported()) return;
@@ -102,7 +104,7 @@ export function usePushSetting(onError: (message: string) => void): PushSetting 
           setOn(false);
         }
       } catch {
-        onError('Couldn’t change notifications, try again');
+        onError(t('Couldn’t change notifications, try again'));
       } finally {
         setBusy(false);
       }

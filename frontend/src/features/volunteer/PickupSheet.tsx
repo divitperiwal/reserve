@@ -1,5 +1,6 @@
 import { Button, Countdown, DietMark, Group, Row, Sheet } from '../../components/ui';
 import { categoryLabel, km, qty } from '../../lib/format';
+import { useT } from '../../lib/i18n';
 import type { Donation } from '../../lib/types';
 import { clockTime } from '../donor/donorKit';
 import { foodImage } from '../../lib/food';
@@ -15,6 +16,7 @@ interface PickupSheetProps {
 
 // Everything a volunteer needs to decide, with one action
 export function PickupSheet({ d, onClose, onClaim, busy, blocked }: PickupSheetProps) {
+  const t = useT();
   return (
     <Sheet
       open={!!d}
@@ -24,9 +26,9 @@ export function PickupSheet({ d, onClose, onClaim, busy, blocked }: PickupSheetP
         d && (
           <div className={s.sheetAction}>
             <Button size="lg" block loading={busy} disabled={blocked} onClick={() => onClaim(d)}>
-              Claim pickup
+              {t('Claim pickup')}
             </Button>
-            {blocked && <p className={s.sheetNote}>Finish your current pickup first.</p>}
+            {blocked && <p className={s.sheetNote}>{t('Finish your current pickup first.')}</p>}
           </div>
         )
       }
@@ -36,22 +38,22 @@ export function PickupSheet({ d, onClose, onClaim, busy, blocked }: PickupSheetP
           <img className={s.photo} src={foodImage(d)} alt="" />
           <div className={s.bigTime}>
             <Countdown to={d.bestBefore} format="short" className={s.bigCountdown} />
-            <span>best before {clockTime(d.bestBefore)}</span>
+            <span>{t('best before {time}', { time: clockTime(d.bestBefore) })}</span>
           </div>
           <Group>
-            <Row title="Amount" trailing={<span className={s.value}>{qty(d)}</span>} />
+            <Row title={t('Amount')} trailing={<span className={s.value}>{qty(d, t)}</span>} />
             <Row
-              title="Type"
+              title={t('Type')}
               trailing={
                 <span className={s.value}>
-                  <DietMark diet={d.diet} /> {categoryLabel[d.category]}
+                  <DietMark diet={d.diet} /> {t(categoryLabel[d.category])}
                 </span>
               }
             />
-            <Row title="Pickup window" trailing={<span className={s.value}>{`${clockTime(d.pickupFrom)} to ${clockTime(d.pickupUntil)}`}</span>} />
+            <Row title={t('Pickup window')} trailing={<span className={s.value}>{t('{from} to {until}', { from: clockTime(d.pickupFrom), until: clockTime(d.pickupUntil) })}</span>} />
           </Group>
           <Group>
-            <Row title={d.donor.name} subtitle={`${d.address}${d.distanceKm !== undefined ? `, ${km(d.distanceKm)} away` : ''}`} />
+            <Row title={d.donor.name} subtitle={d.distanceKm !== undefined ? t('{address}, {km} away', { address: d.address, km: km(d.distanceKm) }) : d.address} />
           </Group>
           {d.note && <p className={s.note}>“{d.note}”</p>}
         </div>

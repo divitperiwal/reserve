@@ -1,5 +1,6 @@
 import jsQR from 'jsqr';
 import { useEffect, useRef, useState } from 'react';
+import { useT } from '../../lib/i18n';
 import s from './stage.module.css';
 
 function failureText(err: unknown) {
@@ -10,6 +11,7 @@ function failureText(err: unknown) {
 
 export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
   const video = useRef<HTMLVideoElement>(null);
+  const t = useT();
   const onScanRef = useRef(onScan);
   const [failure, setFailure] = useState<string | null>(() => ('getUserMedia' in (navigator.mediaDevices ?? {}) ? null : failureText(null)));
 
@@ -71,14 +73,14 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
   if (failure) {
     return (
       <p role="alert" className={s.codeError}>
-        {failure}
+        {t(failure)}
       </p>
     );
   }
   return (
     <div className={s.scanner}>
-      <video ref={video} className={s.scannerVideo} muted playsInline aria-label="Camera preview" />
-      <p className={s.scannerHint}>Point the camera at the QR code on the volunteer's phone.</p>
+      <video ref={video} className={s.scannerVideo} muted playsInline aria-label={t('Camera preview')} />
+      <p className={s.scannerHint}>{t('Point the camera at the QR code on the volunteer’s phone.')}</p>
     </div>
   );
 }

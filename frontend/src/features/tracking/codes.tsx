@@ -2,12 +2,15 @@ import QRCode from 'qrcode';
 import { ScanLine } from 'lucide-react';
 import { useEffect, useId, useState, type FormEvent } from 'react';
 import { Button, cx, Sheet } from '../../components/ui';
+import { shownError } from '../../lib/api';
+import { useT } from '../../lib/i18n';
 import { formatHandover, parseHandover } from './handover';
 import { QrScanner } from './QrScanner';
 import s from './stage.module.css';
 
 export function CodeQr({ donationId, code, label }: { donationId: number; code: string; label: string }) {
   const [src, setSrc] = useState<string | null>(null);
+  const t = useT();
 
   useEffect(() => {
     let live = true;
@@ -20,7 +23,7 @@ export function CodeQr({ donationId, code, label }: { donationId: number; code: 
   }, [donationId, code]);
 
   if (!src) return null;
-  return <img className={s.qr} src={src} alt={`${label} QR code`} width={192} height={192} />;
+  return <img className={s.qr} src={src} alt={t('{label} QR code', { label })} width={192} height={192} />;
 }
 
 export function CodeTiles({ code, label }: { code: string; label: string }) {
@@ -48,6 +51,7 @@ interface CodeSheetProps {
 // Four-digit code entry; the real input sits over the tiles so typing, paste and autofill all work
 export function CodeSheet({ open, donationId, onClose, title, hint, warning, onSubmit }: CodeSheetProps) {
   const id = useId();
+  const t = useT();
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -84,8 +88,8 @@ export function CodeSheet({ open, donationId, onClose, title, hint, warning, onS
   const scanned = (text: string) => {
     setScanning(false);
     const hit = parseHandover(text);
-    if (!hit) return setError('That QR code is not a ReServe handover code.');
-    if (hit.donationId !== donationId) return setError('This code is for a different pickup');
+    if (!hit) return setError(t('That QR code is not a ReServe handover code.'));
+    if (hit.donationId !== donationId) return setError(t('This code is for a different pickup'));
     setCode(hit.code);
     void run(hit.code);
   };
@@ -105,7 +109,7 @@ export function CodeSheet({ open, donationId, onClose, title, hint, warning, onS
         <p className={s.codeHint}>{hint}</p>
         {warning && <p className={s.codeError}>{warning}</p>}
         <label className={s.entry}>
-          <span className="sr-only">4-digit code</span>
+          <span className="sr-only">{t('4-digit code')}</span>
           <input
             className={s.entryInput}
             autoFocus
@@ -132,7 +136,7 @@ export function CodeSheet({ open, donationId, onClose, title, hint, warning, onS
         </label>
         {error && (
           <p id={`${id}-err`} role="alert" className={s.codeError}>
-            {error}
+            {shownError(error, t)}
           </p>
         )}
         {scanning ? (
@@ -148,7 +152,7 @@ export function CodeSheet({ open, donationId, onClose, title, hint, warning, onS
               setScanning(true);
             }}
           >
-            Scan code
+            {t('Scan code')}
           </Button>
         )}
       </form>

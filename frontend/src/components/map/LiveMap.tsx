@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import { useT } from '../../lib/i18n';
 import 'leaflet/dist/leaflet.css';
 import './map.css';
 
@@ -83,6 +84,7 @@ export function LiveMap({
   className,
   children,
 }: LiveMapProps) {
+  const t = useT();
   const first = center ?? (pins[0] ? ([pins[0].lat, pins[0].lng] as [number, number]) : ([12.9, 80.1] as [number, number]));
   return (
     <MapContainer
@@ -117,7 +119,7 @@ export function LiveMap({
           eventHandlers={p.onClick ? { click: p.onClick } : undefined}
           keyboard={!!p.onClick}
         >
-          {!p.label && p.onClick && <Tooltip direction="top" offset={[0, -10]}>Open</Tooltip>}
+          {!p.label && p.onClick && <Tooltip direction="top" offset={[0, -10]}>{t('Open')}</Tooltip>}
         </Marker>
       ))}
       {fit && <FitBounds points={[...pins.map((p): [number, number] => [p.lat, p.lng]), ...(fitExtra ?? [])]} padding={padding} padLeft={padLeft} />}

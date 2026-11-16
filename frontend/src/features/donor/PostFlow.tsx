@@ -19,7 +19,8 @@ import {
 import { Page, Panel, Topbar } from '../../components/dash';
 import { useAuth } from '../../lib/auth';
 import { foodImage } from '../../lib/food';
-import { categoryLabel, unitLabel } from '../../lib/format';
+import { shownError } from '../../lib/api';
+import { categoryLabel, qty, unitName } from '../../lib/format';
 import { useT, type T } from '../../lib/i18n';
 import type { Category, Unit } from '../../lib/types';
 import { useDonorData } from './DonorData';
@@ -137,7 +138,7 @@ export default function PostFlow() {
 
           {form.formError && (
             <p role="alert" className={s.formError}>
-              {form.formError}
+              {shownError(form.formError, t)}
             </p>
           )}
 
@@ -189,12 +190,12 @@ function Preview({ form }: { form: PostForm }) {
         <h3 data-empty={!title || undefined}>
           <DietMark diet={values.diet} /> {title || t('Name of the food')}
         </h3>
-        <p>{categoryLabel[values.category]}</p>
+        <p>{t(categoryLabel[values.category])}</p>
         <dl className={s.facts}>
           <div>
             <dt>{t('Quantity')}</dt>
             <dd>
-              {values.quantity} {unitLabel[values.unit]}
+              {qty(values, t)}
             </dd>
           </div>
           <div>
@@ -250,7 +251,7 @@ function What({ form }: { form: PostForm }) {
       <div className={s.chips} role="group" aria-label={t('Category')}>
         {CATEGORIES.map((c) => (
           <Chip key={c} active={values.category === c} onClick={() => set('category', c)}>
-            {categoryLabel[c]}
+            {t(categoryLabel[c])}
           </Chip>
         ))}
       </div>
@@ -278,7 +279,7 @@ function HowMuch({ form }: { form: PostForm }) {
             onChange={(e) => change(Number(e.target.value.replace(/\D/g, '')) || 0)}
             aria-invalid={!!error('quantity') || undefined}
           />
-          <span>{unitLabel[values.unit]}</span>
+          <span>{unitName(values.unit, t, values.quantity)}</span>
         </label>
         <IconButton label={t('More')} onClick={() => change(values.quantity + 1)} className={s.stepBtn}>
           <Plus size={22} strokeWidth={2} />
@@ -289,7 +290,7 @@ function HowMuch({ form }: { form: PostForm }) {
         label={t('Unit')}
         value={values.unit}
         onChange={(u) => set('unit', u)}
-        options={UNITS.map((u) => ({ value: u, label: unitLabel[u][0]!.toUpperCase() + unitLabel[u].slice(1) }))}
+        options={UNITS.map((u) => ({ value: u, label: unitName(u, t).replace(/^./, (c) => c.toUpperCase()) }))}
       />
       <p className={s.hint}>{t('About {meals}', { meals: mealText(values, t) })}.</p>
     </>
@@ -345,7 +346,7 @@ function Review({ form }: { form: PostForm }) {
           title={t('Type')}
           trailing={
             <span className={s.inline}>
-              <DietMark diet={values.diet} /> {categoryLabel[values.category]}
+              <DietMark diet={values.diet} /> {t(categoryLabel[values.category])}
             </span>
           }
         />

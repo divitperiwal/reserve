@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { shownError } from './api';
+import { unitName } from './format';
 import { fill, translate } from './i18n';
 import { hi } from '../locales/hi';
 import { ta } from '../locales/ta';
@@ -23,5 +25,23 @@ describe('translate', () => {
     for (const dict of [ta, hi]) {
       for (const [key, value] of Object.entries(dict)) expect(marks(value), key).toBe(marks(key));
     }
+  });
+
+  it('has the same keys in both dictionaries', () => {
+    expect(Object.keys(hi).sort()).toEqual(Object.keys(ta).sort());
+  });
+
+  it('translates browser-raised errors and leaves server messages alone', () => {
+    const t = (text: string, vars?: Record<string, string | number>) => translate('ta', text, vars, { 'Upload failed': 'பதிவேற்றம் தோல்வி', 'Request failed ({status})': 'கோரிக்கை தோல்வி ({status})' });
+    expect(shownError('Upload failed', t)).toBe('பதிவேற்றம் தோல்வி');
+    expect(shownError('Request failed (502)', t)).toBe('கோரிக்கை தோல்வி (502)');
+    expect(shownError('Phone already registered', t)).toBe('Phone already registered');
+  });
+
+  it('keeps kg untranslated and uses the singular for one', () => {
+    const t = (text: string) => `<${text}>`;
+    expect(unitName('KG', t, 1)).toBe('kg');
+    expect(unitName('PACKS', t, 1)).toBe('<pack>');
+    expect(unitName('PACKS', t, 3)).toBe('<packs>');
   });
 });

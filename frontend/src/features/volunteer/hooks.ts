@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../components/ui';
 import { api, ApiError } from '../../lib/api';
 import { haversineKm } from '../../lib/format';
+import { useT } from '../../lib/i18n';
 import { pointAlong, roadRoute, type RoadRoute } from '../../lib/route';
 import { useStream } from '../../lib/stream';
 import type { Donation, GeoPoint, MyStats } from '../../lib/types';
@@ -87,6 +88,7 @@ export function useActivePickupState(userId: number) {
 export function useClaim(onGone: (id: number) => void) {
   const { setActive } = useVolunteer();
   const toast = useToast();
+  const t = useT();
   const navigate = useNavigate();
   const [pending, setPending] = useState<number | null>(null);
 
@@ -96,7 +98,7 @@ export function useClaim(onGone: (id: number) => void) {
       try {
         const res = await api.claim(d.id);
         setActive(res);
-        toast(`Claimed. Head to ${d.donor.name}.`);
+        toast(t('Claimed. Head to {name}.', { name: d.donor.name }));
         navigate(`/volunteer/pickup/${d.id}`);
       } catch (e) {
         toast((e as Error).message, { error: true });
@@ -105,7 +107,7 @@ export function useClaim(onGone: (id: number) => void) {
         setPending(null);
       }
     },
-    [navigate, onGone, setActive, toast],
+    [navigate, onGone, setActive, toast, t],
   );
 
   return { pending, claim };

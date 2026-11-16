@@ -32,22 +32,22 @@ export default function ProfilePage() {
               {user.rating.toFixed(1)}
             </span>
           )}
-          {user.vehicle ?? 'Vehicle not set'}
+          {user.vehicle ? t(user.vehicle) : t('Vehicle not set')}
         </span>
         <span className={s.online} data-on={user.onDuty || undefined}>
           <span className={s.onlineDot} aria-hidden />
-          {user.onDuty ? 'Online' : 'Offline'}
+          {user.onDuty ? t('Online') : t('Offline')}
         </span>
       </header>
 
       <div className={s.settings}>
-        <Group footer="When you are off duty, new pickups are not shown to you.">
-          <Row title="On duty" trailing={<Toggle label="On duty" checked={user.onDuty} onChange={setOnDuty} />} chevron={false} />
+        <Group footer={t('When you are off duty, new pickups are not shown to you.')}>
+          <Row title={t('On duty')} trailing={<Toggle label={t('On duty')} checked={user.onDuty} onChange={setOnDuty} />} chevron={false} />
         </Group>
 
         {push && (
           <Group>
-            <NotificationsRow push={push} subtitle="Pickups near you that need a volunteer" />
+            <NotificationsRow push={push} subtitle={t('Pickups near you that need a volunteer')} />
           </Group>
         )}
 
@@ -57,13 +57,13 @@ export default function ProfilePage() {
           </div>
         </Group>
 
-        <Group title="Delivery">
-          <Row title="Vehicle" trailing={user.vehicle ?? 'Not set'} onClick={() => setSheet(true)} />
-          <Row title="Home area" trailing={<span className={s.truncate}>{user.address}</span>} chevron={false} />
+        <Group title={t('Delivery')}>
+          <Row title={t('Vehicle')} trailing={user.vehicle ? t(user.vehicle) : t('Not set')} onClick={() => setSheet(true)} />
+          <Row title={t('Home area')} trailing={<span className={s.truncate}>{user.address}</span>} chevron={false} />
         </Group>
 
-        <Group title="Account">
-          <Row title="Name" subtitle={`+91 ${user.phone}${user.verified ? ', verified' : ''}`} trailing={user.name} onClick={() => setSheet(true)} />
+        <Group title={t('Account')}>
+          <Row title={t('Name')} subtitle={user.verified ? t('+91 {phone}, verified', { phone: user.phone }) : `+91 ${user.phone}`} trailing={user.name} onClick={() => setSheet(true)} />
         </Group>
 
         <button
@@ -74,7 +74,7 @@ export default function ProfilePage() {
             navigate('/', { replace: true });
           }}
         >
-          Sign out
+          {t('Sign out')}
         </button>
       </div>
 
@@ -99,6 +99,7 @@ function EditSheet({
   const [name, setName] = useState(initialName);
   const [vehicle, setVehicle] = useState(initialVehicle);
   const [busy, setBusy] = useState(false);
+  const t = useT();
   const invalid = name.trim().length < 2;
 
   const save = async () => {
@@ -112,21 +113,21 @@ function EditSheet({
     <Sheet
       open={open}
       onClose={onClose}
-      title="Edit profile"
+      title={t('Edit profile')}
       footer={
         <Button size="lg" block loading={busy} disabled={invalid} onClick={save}>
-          Save
+          {t('Save')}
         </Button>
       }
     >
       <div className={s.form}>
-        <Field label="Name" value={name} onChange={(e) => setName(e.target.value)} error={invalid ? 'Enter your name' : undefined} />
+        <Field label={t('Name')} value={name} onChange={(e) => setName(e.target.value)} error={invalid ? t('Enter your name') : undefined} />
         <div className={s.field}>
-          <span className={s.label}>Vehicle</span>
+          <span className={s.label}>{t('Vehicle')}</span>
           <div className={s.chips}>
             {vehicles.map((v) => (
               <Chip key={v} active={vehicle === v} onClick={() => setVehicle(v)}>
-                {v}
+                {t(v)}
               </Chip>
             ))}
           </div>

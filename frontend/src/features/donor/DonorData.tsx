@@ -19,7 +19,7 @@ const Ctx = createContext<DonorData | null>(null);
 
 function announce(prev: Donation | undefined, next: Donation, t: T) {
   const title = next.title;
-  const accepted = t('{ngo} accepted {qty} of {title}', { ngo: next.ngo?.name ?? t('A kitchen'), qty: qty(next), title });
+  const accepted = t('{ngo} accepted {qty} of {title}', { ngo: next.ngo?.name ?? t('A kitchen'), qty: qty(next, t), title });
   if (!prev) return next.status === 'ACCEPTED' ? accepted : null;
   if (prev.status === next.status) return null;
   const who = next.volunteer ? firstName(next.volunteer.name) : t('A volunteer');

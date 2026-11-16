@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Check, Navigation, Phone } from 'lucide-react';
 import { Button, ButtonLink, Group, Row, Skeleton, Stepper, Toggle, useToast } from '../../components/ui';
-import { api } from '../../lib/api';
+import { api, shownError } from '../../lib/api';
 import { qty } from '../../lib/format';
+import { useT } from '../../lib/i18n';
 import type { Donation } from '../../lib/types';
 import { CodeQr, CodeTiles } from '../tracking/codes';
 import { isActive, leg, nextStop } from '../tracking/geo';
@@ -23,13 +24,14 @@ export default function ActivePickupPage() {
   const id = Number(useParams().id);
   const navigate = useNavigate();
   const toast = useToast();
+  const t = useT();
   const { setActive, setSkipped } = useVolunteer();
   const [releasing, setReleasing] = useState(false);
 
   const { donation: d, trail, error, update, pushPoint, retry } = useTracking(id, (next, _prev, full) => {
-    if (next === 'PICKED_UP') toast(`Picked up. Now head to ${full.ngo?.name ?? 'the kitchen'}.`);
+    if (next === 'PICKED_UP') toast(full.ngo ? t('Picked up. Now head to {ngo}.', { ngo: full.ngo.name }) : t('Picked up. Now head to the kitchen.'));
     if (next === 'DELIVERED') {
-      toast('Delivered. Thank you!');
+      toast(t('Delivered. Thank you!'));
       setActive(null);
     }
     if (isActive(next)) setActive(full);
@@ -42,12 +44,12 @@ export default function ActivePickupPage() {
     return (
       <div className={st.center}>
         <div className={st.done}>
-          <h1 className={st.title}>Couldn’t load this pickup</h1>
-          <p className={st.sub}>{error}</p>
+          <h1 className={st.title}>{t('Couldn’t load this pickup')}</h1>
+          <p className={st.sub}>{shownError(error, t)}</p>
           <div className={st.pair}>
-            <Button onClick={retry}>Try again</Button>
+            <Button onClick={retry}>{t('Try again')}</Button>
             <Button variant="secondary" onClick={back}>
-              Back to pickups
+              {t('Back to pickups')}
             </Button>
           </div>
         </div>
@@ -56,7 +58,7 @@ export default function ActivePickupPage() {
 
   if (!d)
     return (
-      <MapStage map={null} onBack={back} backLabel="Pickups">
+      <MapStage map={null} onBack={back} backLabel={t('Pickups')}>
         <div className={st.skeleton} aria-busy="true">
           <Skeleton w="70%" h={28} />
           <Skeleton w="40%" h={48} />
@@ -71,7 +73,7 @@ export default function ActivePickupPage() {
       update(await api.release(d.id));
       setActive(null);
       setSkipped((l) => [...l, d.id]);
-      toast('Released. Another volunteer will be found.');
+      toast(t('Released. Another volunteer will be found.'));
       navigate('/volunteer', { replace: true });
     } catch (e) {
       toast((e as Error).message, { error: true });
@@ -88,19 +90,19 @@ export default function ActivePickupPage() {
   const contact = toDonor ? d.donor.phone : undefined;
 
   return (
-    <MapStage map={<RouteMap d={d} trail={trail} route={route} />} onBack={back} backLabel="Pickups">
+    <MapStage map={<RouteMap d={d} trail={trail} route={route} />} onBack={back} backLabel={t('Pickups')}>
       <div className={st.head}>
-        <h1 className={st.title}>{toDonor ? `Head to ${d.donor.name}` : `Deliver to ${stop.name}`}</h1>
+        <h1 className={st.title}>{toDonor ? t('Head to {name}', { name: d.donor.name }) : t('Deliver to {name}', { name: stop.name })}</h1>
         <p className={st.sub}>
-          {d.title}, {qty(d)}
+          {d.title}, {qty(d, t)}
         </p>
       </div>
 
       {eta && (
         <div className={st.eta}>
           <span className={st.etaNum}>{eta.min}</span>
-          <span className={st.etaUnit}>min</span>
-          <span className={st.etaMeta}>{eta.km.toFixed(1)} km away</span>
+          <span className={st.etaUnit}>{t('min')}</span>
+          <span className={st.etaMeta}>{t('{km} km away', { km: eta.km.toFixed(1) })}</span>
         </div>
       )}
 
@@ -109,11 +111,11 @@ export default function ActivePickupPage() {
       {code && (
         <div className={st.codeBlock}>
           <span className={st.codeLabel}>
-            <strong>{toDonor ? 'Pickup code' : 'Delivery code'}</strong>
-            <span>{toDonor ? `Show this to ${d.donor.name} when you collect.` : `Show this to ${stop.name} when you hand over.`}</span>
+            <strong>{toDonor ? t('Pickup code') : t('Delivery code')}</strong>
+            <span>{toDonor ? t('Show this to {name} when you collect.', { name: d.donor.name }) : t('Show this to {name} when you hand over.', { name: stop.name })}</span>
           </span>
-          <CodeQr donationId={d.id} code={code} label={toDonor ? 'Pickup code' : 'Delivery code'} />
-          <CodeTiles code={code} label={toDonor ? 'Pickup code' : 'Delivery code'} />
+          <CodeQr donationId={d.id} code={code} label={toDonor ? t('Pickup code') : t('Delivery code')} />
+          <CodeTiles code={code} label={toDonor ? t('Pickup code') : t('Delivery code')} />
         </div>
       )}
 
@@ -127,30 +129,30 @@ export default function ActivePickupPage() {
             className={s.grow}
             icon={<Navigation size={18} strokeWidth={2} aria-hidden />}
           >
-            Navigate
+            {t('Navigate')}
           </ButtonLink>
           {contact && (
-            <a className={st.call} href={`tel:+91${contact}`} aria-label={`Call ${d.donor.name}`}>
+            <a className={st.call} href={`tel:+91${contact}`} aria-label={t('Call {name}', { name: d.donor.name })}>
               <Phone size={18} strokeWidth={2} aria-hidden />
             </a>
           )}
         </div>
         {toDonor && (
           <Button variant="ghost" block loading={releasing} onClick={release}>
-            Release pickup
+            {t('Release pickup')}
           </Button>
         )}
       </div>
 
-      <Group footer={share.canSimulate ? 'No GPS nearby? Simulate the ride to see live tracking.' : undefined}>
+      <Group footer={share.canSimulate ? t('No GPS nearby? Simulate the ride to see live tracking.') : undefined}>
         <Row
-          title={share.simulating ? 'Simulating ride' : gpsText[share.gps]}
-          subtitle={share.sharing ? 'The donor and kitchen see you on the map' : undefined}
+          title={share.simulating ? t('Simulating ride') : t(gpsText[share.gps])}
+          subtitle={share.sharing ? t('The donor and kitchen see you on the map') : undefined}
           leading={<span className={s.liveDot} data-on={share.sharing || undefined} aria-hidden />}
           chevron={false}
         />
         {share.canSimulate && (
-          <Row title="Simulate ride" trailing={<Toggle label="Simulate ride" checked={share.simulating} onChange={share.setSimulating} />} chevron={false} />
+          <Row title={t('Simulate ride')} trailing={<Toggle label={t('Simulate ride')} checked={share.simulating} onChange={share.setSimulating} />} chevron={false} />
         )}
       </Group>
     </MapStage>
@@ -159,6 +161,7 @@ export default function ActivePickupPage() {
 
 function Finished({ d, onBack }: { d: Donation; onBack: () => void }) {
   const delivered = d.status === 'DELIVERED';
+  const t = useT();
   return (
     <div className={st.center}>
       <div className={st.done}>
@@ -168,13 +171,13 @@ function Finished({ d, onBack }: { d: Donation; onBack: () => void }) {
           </span>
         )}
         <div className={st.head}>
-          <h1 className={st.title}>{delivered ? 'Delivered' : 'This pickup is closed'}</h1>
+          <h1 className={st.title}>{delivered ? t('Delivered') : t('This pickup is closed')}</h1>
           <p className={st.sub}>
-            {delivered ? `${d.title} reached ${d.ngo?.name ?? 'the kitchen'}. That’s about ${d.meals} meals.` : 'It’s no longer assigned to you.'}
+            {delivered ? t('{title} reached {ngo}. That’s about {meals} meals.', { title: d.title, ngo: d.ngo?.name ?? t('the kitchen'), meals: d.meals }) : t('It’s no longer assigned to you.')}
           </p>
         </div>
         <Button size="lg" onClick={onBack}>
-          Back to pickups
+          {t('Back to pickups')}
         </Button>
       </div>
     </div>
