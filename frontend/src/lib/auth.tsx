@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { api, tokenStore } from './api';
+import { forgetPush } from './push';
 import type { AuthResponse, Role, User } from './types';
 
 interface AuthState {
@@ -36,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(() => {
+    void forgetPush(tokenStore.get());
     tokenStore.set(null);
     setUser(null);
   }, []);

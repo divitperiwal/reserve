@@ -15,8 +15,8 @@ export function keyBytes(base64url: string) {
 }
 
 async function current() {
-  const reg = await navigator.serviceWorker.ready;
-  return reg.pushManager.getSubscription();
+  const reg = await navigator.serviceWorker.getRegistration();
+  return reg ? reg.pushManager.getSubscription() : null;
 }
 
 async function save(sub: PushSubscription) {
@@ -24,9 +24,11 @@ async function save(sub: PushSubscription) {
   await api.pushSubscribe({ endpoint: sub.endpoint, keys: { p256dh: keys?.p256dh ?? '', auth: keys?.auth ?? '' } });
 }
 
+// On only when this browser is subscribed and the server has the subscription under the signed-in user
 export async function pushIsOn() {
   if (!pushSupported() || Notification.permission !== 'granted') return false;
-  return (await current()) !== null;
+  const sub = await current();
+  return sub !== null && (await api.pushSubscribed(sub.endpoint)).subscribed;
 }
 
 // Resolves false when the server has push off or the person declines the browser prompt
@@ -49,6 +51,15 @@ export async function disablePush() {
   await sub.unsubscribe();
 }
 
+// Called on sign-out with the token that is about to be cleared, so the next person on this browser gets none of these alerts
+export async function forgetPush(token: string | null) {
+  if (!token || !pushSupported()) return;
+  const sub = await current();
+  if (!sub) return;
+  await api.pushUnsubscribe(sub.endpoint, token).catch(() => undefined);
+  await sub.unsubscribe().catch(() => undefined);
+}
+
 export interface PushSetting {
   on: boolean;
   busy: boolean;
@@ -56,7 +67,7 @@ export interface PushSetting {
   toggle: (next: boolean) => Promise<void>;
 }
 
-// Null while loading or when push is unavailable; an existing subscription is re-saved so it follows whoever is signed in
+// Null while loading or when push is unavailable
 export function usePushSetting(onError: (message: string) => void): PushSetting | null {
   const [on, setOn] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
@@ -68,9 +79,8 @@ export function usePushSetting(onError: (message: string) => void): PushSetting 
       .pushKey()
       .then(async ({ enabled }) => {
         if (!enabled) return;
-        const sub = (await pushIsOn()) ? await current() : null;
-        if (sub) await save(sub).catch(() => undefined);
-        if (live) setOn(sub !== null);
+        const on = await pushIsOn();
+        if (live) setOn(on);
       })
       .catch(() => undefined);
     return () => {

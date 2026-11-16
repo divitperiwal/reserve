@@ -30,7 +30,7 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
-        .then((response) => store('/', response))
+        .then((response) => ((response.headers.get('content-type') || '').includes('text/html') ? store('/', response) : response))
         .catch(() => caches.match('/')),
     );
   } else if (url.pathname.startsWith('/assets/')) {
@@ -41,7 +41,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   let data = {};
   try {
-    data = event.data ? event.data.json() : {};
+    data = (event.data && event.data.json()) || {};
   } catch {
     data = { body: event.data ? event.data.text() : '' };
   }

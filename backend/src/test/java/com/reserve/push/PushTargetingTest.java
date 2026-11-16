@@ -73,9 +73,19 @@ class PushTargetingTest {
 
         List<PushTargeting.Delivery> out = PushTargeting.accepted(d, List.of(onDuty, offDuty, far), ZONE);
 
-        assertEquals(List.of("Arun"), names(out));
-        assertEquals(new PushMessage("Pickup needed", "40 servings of veg biryani for Hope Kitchen, 0.5 km away, pick up by 9:30 pm", "/volunteer"),
+        assertEquals(List.of("Kalyan Mahal", "Arun"), names(out));
+        assertEquals(new PushMessage("A kitchen accepted your food", "Hope Kitchen is taking 40 servings of veg biryani", "/donor"),
                 out.get(0).message());
+        assertEquals(new PushMessage("Pickup needed", "40 servings of veg biryani for Hope Kitchen, 0.5 km away, pick up by 9:30 pm", "/volunteer"),
+                out.get(1).message());
+    }
+
+    @Test
+    void donorHearsAboutAcceptanceEvenWithNoVolunteersNearby() {
+        Donation d = donation(180);
+        d.setNgo(user(Role.NGO, "Hope Kitchen", 3));
+        d.setStatus(Status.ACCEPTED);
+        assertEquals(List.of("Kalyan Mahal"), names(PushTargeting.accepted(d, List.of(), ZONE)));
     }
 
     @Test

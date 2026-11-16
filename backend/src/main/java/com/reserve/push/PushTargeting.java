@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public final class PushTargeting {
 
@@ -36,15 +37,18 @@ public final class PushTargeting {
                 new PushMessage("Critical food nearby", what(d) + ", " + km + " away, best before " + until, "/ngo"));
     }
 
-    // Food a kitchen has accepted goes to on-duty volunteers within 7 km of the pickup
+    // Food a kitchen has accepted goes to its donor and to on-duty volunteers within 7 km of the pickup
     public static List<Delivery> accepted(Donation d, List<User> volunteers, ZoneId zone) {
         if (d.getStatus() != Status.ACCEPTED || d.getNgo() == null) {
             return List.of();
         }
         String until = time(d.getPickupUntil(), zone);
         String to = d.getNgo().getName();
-        return nearby(d, volunteers, u -> u.getRole() == Role.VOLUNTEER && u.isOnDuty(), km ->
+        Delivery donor = new Delivery(d.getDonor(),
+                new PushMessage("A kitchen accepted your food", to + " is taking " + what(d), "/donor"));
+        List<Delivery> riders = nearby(d, volunteers, u -> u.getRole() == Role.VOLUNTEER && u.isOnDuty(), km ->
                 new PushMessage("Pickup needed", what(d) + " for " + to + ", " + km + " away, pick up by " + until, "/volunteer"));
+        return Stream.concat(Stream.of(donor), riders.stream()).toList();
     }
 
     private static List<Delivery> nearby(Donation d, List<User> people, Predicate<User> eligible,

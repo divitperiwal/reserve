@@ -2,12 +2,14 @@ package com.reserve.push;
 
 import com.reserve.auth.AuthUser;
 import jakarta.validation.Valid;
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -23,6 +25,11 @@ public class PushController {
     @GetMapping("/key")
     public PushKey key() {
         return push.key();
+    }
+
+    @GetMapping("/subscribed")
+    public Map<String, Boolean> subscribed(@AuthenticationPrincipal AuthUser me, @RequestParam String endpoint) {
+        return Map.of("subscribed", push.subscribed(me.id(), endpoint));
     }
 
     @PostMapping("/subscribe")

@@ -47,9 +47,8 @@ export const tokenStore = {
   },
 };
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown, token = tokenStore.get()): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  const token = tokenStore.get();
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   let res: Response;
@@ -142,7 +141,8 @@ export const api = {
 
   pushKey: () => request<PushKey>('GET', '/push/key'),
   pushSubscribe: (input: PushSubscriptionInput) => request<void>('POST', '/push/subscribe', input),
-  pushUnsubscribe: (endpoint: string) => request<void>('POST', '/push/unsubscribe', { endpoint }),
+  pushSubscribed: (endpoint: string) => request<{ subscribed: boolean }>('GET', `/push/subscribed${qs({ endpoint })}`),
+  pushUnsubscribe: (endpoint: string, token?: string) => request<void>('POST', '/push/unsubscribe', { endpoint }, token),
 
   publicStats: () => request<PublicStats>('GET', '/stats/public'),
   myStats: () => request<MyStats>('GET', '/stats/me'),

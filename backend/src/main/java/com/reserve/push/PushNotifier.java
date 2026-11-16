@@ -1,8 +1,6 @@
 package com.reserve.push;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 import com.reserve.donation.DonationEvent;
 import com.reserve.donation.DonationRepository;
@@ -33,7 +31,7 @@ public class PushNotifier {
         this.zone = ZoneId.of(zone);
     }
 
-    // Runs on the task pool once the donation is committed; people who get the same text share one send
+    // Runs on the task pool once the donation is committed
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(DonationEvent event) {
@@ -45,9 +43,7 @@ public class PushNotifier {
                 case CREATED -> PushTargeting.created(d, users.findByRoleOrderByNameAsc(Role.NGO), OffsetDateTime.now(), zone);
                 case ACCEPTED -> PushTargeting.accepted(d, users.findByRoleAndOnDutyTrue(Role.VOLUNTEER), zone);
             };
-            deliveries.stream()
-                    .collect(groupingBy(PushTargeting.Delivery::message, LinkedHashMap::new, mapping(x -> x.user().getId(), toList())))
-                    .forEach((message, ids) -> push.send(ids, message));
+            push.send(deliveries.stream().collect(toMap(x -> x.user().getId(), PushTargeting.Delivery::message, (a, b) -> a, LinkedHashMap::new)));
         });
     }
 }

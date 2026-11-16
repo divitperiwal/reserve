@@ -1,10 +1,10 @@
 package com.reserve.push;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.GeneralSecurityException;
 import java.security.Security;
-import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -71,35 +71,45 @@ public class PushService {
         subscriptions.deleteByEndpointAndUserId(endpoint, userId);
     }
 
-    // Sends to every browser of these users; endpoints that answer 404 or 410 are gone and get removed
-    public void send(Collection<Long> userIds, PushMessage message) {
-        if (client == null || userIds.isEmpty()) {
+    @Transactional(readOnly = true)
+    public boolean subscribed(Long userId, String endpoint) {
+        return subscriptions.existsByEndpointAndUserId(endpoint, userId);
+    }
+
+    // Starts every send at once, then waits for all under one 10 s deadline; 404 or 410 means the endpoint is gone
+    public void send(Map<Long, PushMessage> messages) {
+        if (client == null || messages.isEmpty()) {
             return;
         }
-        byte[] payload;
-        try {
-            payload = json.writeValueAsBytes(message);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException(e);
-        }
-        for (PushSubscription s : subscriptions.findByUserIdIn(userIds)) {
-            Future<HttpResponse> pending = null;
+        Map<PushSubscription, Future<HttpResponse>> pending = new LinkedHashMap<>();
+        for (PushSubscription s : subscriptions.findByUserIdIn(messages.keySet())) {
             try {
-                pending = client.sendAsync(new Notification(s.getEndpoint(), s.getP256dh(), s.getAuth(), payload));
-                int status = pending.get(TIMEOUT_SECONDS, TimeUnit.SECONDS).getStatusLine().getStatusCode();
+                byte[] payload = json.writeValueAsBytes(messages.get(s.getUserId()));
+                pending.put(s, client.sendAsync(new Notification(s.getEndpoint(), s.getP256dh(), s.getAuth(), payload)));
+            } catch (Exception e) {
+                log.warn("Push to user {} failed: {}", s.getUserId(), e.toString());
+            }
+        }
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TIMEOUT_SECONDS);
+        for (Map.Entry<PushSubscription, Future<HttpResponse>> e : pending.entrySet()) {
+            PushSubscription s = e.getKey();
+            try {
+                long left = Math.max(0, deadline - System.nanoTime());
+                int status = e.getValue().get(left, TimeUnit.NANOSECONDS).getStatusLine().getStatusCode();
                 if (status == 404 || status == 410) {
                     subscriptions.delete(s);
                 } else if (status >= 400) {
                     log.warn("Push to user {} was refused with {}", s.getUserId(), status);
                 }
-            } catch (TimeoutException e) {
-                pending.cancel(true);
+            } catch (TimeoutException ex) {
+                e.getValue().cancel(true);
                 log.warn("Push to user {} timed out", s.getUserId());
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
+                pending.values().forEach(f -> f.cancel(true));
                 return;
-            } catch (Exception e) {
-                log.warn("Push to user {} failed: {}", s.getUserId(), e.toString());
+            } catch (Exception ex) {
+                log.warn("Push to user {} failed: {}", s.getUserId(), ex.toString());
             }
         }
     }
