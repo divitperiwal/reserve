@@ -5,7 +5,7 @@ import { Button, ButtonLink, Group, Row, Skeleton, Stepper, Toggle, useToast } f
 import { api } from '../../lib/api';
 import { qty } from '../../lib/format';
 import type { Donation } from '../../lib/types';
-import { CodeTiles } from '../tracking/codes';
+import { CodeQr, CodeTiles } from '../tracking/codes';
 import { isActive, leg, nextStop } from '../tracking/geo';
 import { MapStage } from '../tracking/MapStage';
 import { RouteMap } from '../tracking/RouteMap';
@@ -112,6 +112,7 @@ export default function ActivePickupPage() {
             <strong>{toDonor ? 'Pickup code' : 'Delivery code'}</strong>
             <span>{toDonor ? `Show this to ${d.donor.name} when you collect.` : `Show this to ${stop.name} when you hand over.`}</span>
           </span>
+          <CodeQr donationId={d.id} code={code} label={toDonor ? 'Pickup code' : 'Delivery code'} />
           <CodeTiles code={code} label={toDonor ? 'Pickup code' : 'Delivery code'} />
         </div>
       )}

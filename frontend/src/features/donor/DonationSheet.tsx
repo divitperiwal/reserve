@@ -175,6 +175,7 @@ export function DonationSheet({ d, onClose }: { d: Donation | null; onClose: () 
       </Sheet>
       <CodeSheet
         open={codeOpen}
+        donationId={d.id}
         onClose={() => setCodeOpen(false)}
         title="Confirm pickup"
         hint={`Enter the 4-digit code ${firstName(d.volunteer?.name)} shows you.`}

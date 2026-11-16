@@ -157,6 +157,7 @@ export default function TrackPage() {
 
       <CodeSheet
         open={codeOpen}
+        donationId={d.id}
         onClose={() => setCodeOpen(false)}
         title={isDonor ? 'Confirm pickup' : 'Confirm delivery'}
         hint={`Enter the code ${first(d.volunteer?.name)} shows you.`}

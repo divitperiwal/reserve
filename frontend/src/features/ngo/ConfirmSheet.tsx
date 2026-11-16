@@ -11,6 +11,7 @@ export function ConfirmSheet({ delivery, onClose }: { delivery: Donation | null;
   return (
     <CodeSheet
       open={!!delivery}
+      donationId={delivery?.id ?? 0}
       onClose={onClose}
       title="Confirm delivery"
       hint={`Enter the 4-digit code ${who} shows you.`}
