@@ -23,6 +23,7 @@ import { categoryLabel, unitLabel } from '../../lib/format';
 import type { Category, Unit } from '../../lib/types';
 import { useDonorData } from './DonorData';
 import { dayTime, mealsFor, pickupWindow } from './donorKit';
+import AiAssist from './AiAssist';
 import PhotoDrop from './PhotoDrop';
 import TimingStep from './TimingStep';
 import { SAFETY, STEPS, usePostForm, type FieldKey, type PostForm } from './usePostForm';
@@ -250,6 +251,7 @@ function What({ form }: { form: PostForm }) {
         ))}
       </div>
       <PhotoDrop url={values.photoUrl} onChange={(u) => set('photoUrl', u)} onUploading={form.setUploading} />
+      <AiAssist photoUrl={values.photoUrl} uploading={form.uploading} onDraft={form.applyDraft} />
     </>
   );
 }

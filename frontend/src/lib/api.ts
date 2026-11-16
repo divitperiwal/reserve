@@ -3,6 +3,7 @@ import type {
   AuthResponse,
   CreateDonation,
   DashboardStats,
+  DonationDraft,
   Donation,
   GeoPoint,
   Leaderboard,
@@ -133,6 +134,9 @@ export const api = {
     if (!res.ok) throw new ApiError(res.status, data.message ?? 'Upload failed', data.fields);
     return data;
   },
+
+  aiStatus: () => request<{ enabled: boolean }>('GET', '/ai/status'),
+  aiDraft: (input: { photoUrl: string } | { text: string }) => request<DonationDraft>('POST', '/ai/draft', input),
 
   publicStats: () => request<PublicStats>('GET', '/stats/public'),
   myStats: () => request<MyStats>('GET', '/stats/me'),

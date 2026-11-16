@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../../lib/api';
 import { useNow } from '../../lib/time';
-import type { Category, CreateDonation, Diet, Donation, SafetyCheck, Unit, User } from '../../lib/types';
+import type { Category, CreateDonation, Diet, Donation, DonationDraft, SafetyCheck, Unit, User } from '../../lib/types';
+import { draftToForm } from './draftToForm';
 import { dateKey, joinDateTime, roundQuarter, shelfLife, timeKey, weightFor, whenPhrase } from './donorKit';
 
 export interface PostValues {
@@ -248,6 +249,14 @@ export function usePostForm(user: User | null) {
     setAutofilled(TIMES.every((k) => e.has(k)) ? null : values.category);
   }, [values.category]);
 
+  const applyDraft = useCallback((draft: DonationDraft) => {
+    const patch = draftToForm(draft, Date.now());
+    TIMES.forEach((k) => patch[k] && edited.current.add(k));
+    setValues((v) => ({ ...v, ...patch }));
+    setServer({});
+    setFormError(null);
+  }, []);
+
   const touch = useCallback((key: FieldKey) => setTouched((t) => (t.has(key) ? t : new Set(t).add(key))), []);
 
   const error = (key: FieldKey) => {
@@ -319,6 +328,7 @@ export function usePostForm(user: User | null) {
     setDate,
     setWindow,
     autofillTimes,
+    applyDraft,
     autofilled,
     touch,
     error,

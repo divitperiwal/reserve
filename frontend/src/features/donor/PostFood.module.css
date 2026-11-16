@@ -519,3 +519,21 @@
   font-size: var(--t-sm);
   color: var(--red-ink);
 }
+
+/* AI assist */
+.ai {
+  display: grid;
+  gap: var(--s-3);
+}
+.aiRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.transcript {
+  padding: var(--s-3);
+  border-radius: var(--r-ctl);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: var(--t-body);
+}
