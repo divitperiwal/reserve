@@ -36,4 +36,7 @@ app:
     dev: ${APP_OTP_DEV:true}
   upload-dir: ${APP_UPLOAD_DIR:./uploads}
   zone: Asia/Kolkata
+  ai:
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${AI_MODEL:claude-opus-5-5}
   cors-origin: ${APP_CORS_ORIGINS:http://localhost:*,http://127.0.0.1:*}

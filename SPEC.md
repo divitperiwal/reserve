@@ -87,6 +87,10 @@ Errors: `{ "message": string, "fields"?: Record<string,string> }` with 400/401/4
 - `POST /api/uploads` (DONOR, multipart field `file`, JPG/PNG/WEBP ≤ 5 MB) → `{url: "/api/uploads/<uuid>.jpg"}`; stored on disk under `app.upload-dir` (default `./uploads`).
 - `GET /api/uploads/{name}` (public) → the image.
 
+### AI drafting
+- `GET /api/ai/status` (DONOR) → `{enabled: boolean}`; `enabled` is false unless `ANTHROPIC_API_KEY` is set.
+- `POST /api/ai/draft` (DONOR) `{photoUrl?, text?}` with exactly one set (else 400; `photoUrl` must be an uploaded photo, `text` up to 2000 characters, Tamil, Hindi or English) → `DonationDraft`. Every field may be missing, minutes count from now and are clamped to 0 to 2880. 404 `AI drafting is off` when no key is set; 422 `Couldn't read that, please fill the form yourself` when the model refuses, times out or fails; 429 after 30 drafts per donor per hour (per instance, in memory).
+
 ### Stats & activity
 - `GET /api/stats/public` (public) → `PublicStats`
 - `GET /api/stats/me` → `MyStats`
@@ -138,6 +142,8 @@ interface MyStats { monthLabel: string; pickups: number; meals: number; rank?: n
 interface Leaderboard { days: number; meals: number; foodKg: number; co2Kg: number;
   volunteers: { id: number; name: string; initials: string; pickups: number; meals: number; badge?: string }[];
   donors: { id: number; name: string; initials: string; donations: number; meals: number }[] }
+interface DonationDraft { title?: string; diet?: Diet; category?: Category; quantity?: number; unit?: Unit;
+  bestBeforeMinutes?: number; pickupFromMinutes?: number; pickupUntilMinutes?: number; note?: string }
 interface SurplusForecastEntry { donorId: number; donorName: string; address: string; lat: number; lng: number;
   from: string; until: string; expectedMeals: number; weeksSeen: number; weeksLooked: number /* always 8 */ }
 interface SurplusMap { days: number; points: { lat: number; lng: number; kg: number; status: Status }[];

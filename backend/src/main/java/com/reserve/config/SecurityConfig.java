@@ -41,6 +41,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/stats/public", "/api/stats/leaderboard", "/api/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/donations/feed").hasAnyRole("VOLUNTEER", "NGO")
                         .requestMatchers(HttpMethod.POST, "/api/donations", "/api/uploads").hasRole("DONOR")
+                        .requestMatchers(HttpMethod.GET, "/api/ai/status").hasRole("DONOR")
+                        .requestMatchers(HttpMethod.POST, "/api/ai/draft").hasRole("DONOR")
                         .requestMatchers(HttpMethod.DELETE, "/api/donations/*").hasRole("DONOR")
                         .requestMatchers(HttpMethod.POST, "/api/donations/*/confirm-pickup").hasRole("DONOR")
                         .requestMatchers(HttpMethod.GET, "/api/donations/*/nearby-volunteers").hasRole("DONOR")

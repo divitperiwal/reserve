@@ -106,6 +106,18 @@ export interface CreateDonation {
   safetyChecks: SafetyCheck[];
 }
 
+export interface DonationDraft {
+  title?: string;
+  diet?: Diet;
+  category?: Category;
+  quantity?: number;
+  unit?: Unit;
+  bestBeforeMinutes?: number;
+  pickupFromMinutes?: number;
+  pickupUntilMinutes?: number;
+  note?: string;
+}
+
 export interface PublicStats {
   mealsRescued: number;
   foodKg: number;
