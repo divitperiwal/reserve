@@ -127,7 +127,6 @@ export const hi: Record<string, string> = {
   'Enter a name': 'नाम डालें',
   'Use at least 6 characters': 'कम से कम 6 अक्षर रखें',
   'Add an address so we can match you with nearby pickups': 'पता डालें ताकि हम आपको पास के पिकअप से जोड़ सकें',
-  'Near {lat}, {lng}': '{lat}, {lng} के पास',
   'Step {step} of 3': 'चरण {step} / 3',
   'Step {step} of 3, {role} account': 'चरण {step} / 3, {role} खाता',
   'Full name': 'पूरा नाम',

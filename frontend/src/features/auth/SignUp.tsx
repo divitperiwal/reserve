@@ -82,7 +82,7 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
     try {
       const pos = await currentPosition();
       setCoords(pos);
-      if (!address.trim()) setAddress(t('Near {lat}, {lng}', { lat: pos.lat.toFixed(4), lng: pos.lng.toFixed(4) }));
+      if (!address.trim()) setAddress(`Near ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`);
     } catch (err) {
       setErrors((e) => ({ ...e, address: (err as Error).message }));
     } finally {

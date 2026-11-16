@@ -127,7 +127,6 @@ export const ta: Record<string, string> = {
   'Enter a name': 'பெயரை உள்ளிடுங்கள்',
   'Use at least 6 characters': 'குறைந்தது 6 எழுத்துகள் வேண்டும்',
   'Add an address so we can match you with nearby pickups': 'அருகிலுள்ள பிக்அப்களுடன் இணைக்க முகவரியைச் சேருங்கள்',
-  'Near {lat}, {lng}': '{lat}, {lng} அருகில்',
   'Step {step} of 3': 'படி {step} / 3',
   'Step {step} of 3, {role} account': 'படி {step} / 3, {role} கணக்கு',
   'Full name': 'முழுப் பெயர்',
