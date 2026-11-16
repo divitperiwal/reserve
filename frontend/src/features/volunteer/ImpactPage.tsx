@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Award, PackageCheck } from 'lucide-react';
 import { FoodThumb } from '../../components/dash';
-import { Progress, Skeleton } from '../../components/ui';
+import { Badge, Group, Progress, Row, Skeleton } from '../../components/ui';
 import { api } from '../../lib/api';
 import { num, qty } from '../../lib/format';
+import { kgText } from '../../lib/impact';
 import type { Donation } from '../../lib/types';
 import { dayWord } from '../donor/donorKit';
 import { useVolunteer } from './context';
@@ -86,6 +87,47 @@ export default function ImpactPage() {
           <p className={s.badgeNote}>{badge.target > badge.current ? `${badge.target - badge.current} more to go` : 'Earned'}</p>
         </section>
       )}
+
+      <section aria-label="Earned badges">
+        <h2 className={s.sectionTitle}>Earned badges</h2>
+        {!stats ? (
+          <Skeleton h={32} r={16} />
+        ) : stats.earnedBadges.length === 0 ? (
+          <p className={s.note}>Your first badge comes after 5 pickups.</p>
+        ) : (
+          <div className={s.badgeRow}>
+            {stats.earnedBadges.map((b) => (
+              <Badge key={b} tone="fresh">
+                <Award size={14} strokeWidth={2} aria-hidden />
+                {b}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section aria-label="All time">
+        <h2 className={s.sectionTitle}>All time</h2>
+        <dl className={s.totalGrid}>
+          <div>
+            <dt>Meals</dt>
+            <dd>{stats ? num(stats.allTime.meals) : <Skeleton w={56} h={24} />}</dd>
+          </div>
+          <div>
+            <dt>Food</dt>
+            <dd>{stats ? kgText(stats.allTime.foodKg) : <Skeleton w={56} h={24} />}</dd>
+          </div>
+          <div>
+            <dt>CO₂e avoided</dt>
+            <dd>{stats ? kgText(stats.allTime.co2Kg) : <Skeleton w={56} h={24} />}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <Group>
+        <Row title="Leaderboard" to="/leaderboard" />
+        <Row title="Download certificate" to="/certificate" />
+      </Group>
 
       <section className={s.card} aria-label="This week">
         <div className={s.cardHead}>

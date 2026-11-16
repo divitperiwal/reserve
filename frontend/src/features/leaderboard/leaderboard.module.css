@@ -1,0 +1,135 @@
+.page {
+  min-height: 100dvh;
+  background: var(--bg);
+}
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--line);
+  background: rgb(255 255 255 / 0.85);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+.navInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1040px;
+  height: 56px;
+  margin: 0 auto;
+  padding: 0 var(--s-4);
+}
+.main {
+  display: grid;
+  gap: var(--s-5);
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--s-6) var(--s-4) var(--s-8);
+}
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+.head h1 {
+  font-size: var(--t-xl);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+.totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-2);
+  margin: 0;
+}
+.totals div {
+  display: grid;
+  gap: 2px;
+  padding: var(--s-3) var(--s-4);
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+.totals dt {
+  color: var(--ink-2);
+  font-size: var(--t-xs);
+  font-weight: 560;
+}
+.totals dd {
+  margin: 0;
+  font-size: var(--t-lg);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.tables {
+  display: grid;
+  gap: var(--s-6);
+  align-items: start;
+}
+.tables h2 {
+  margin-bottom: var(--s-2);
+  font-size: var(--t-md);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-body);
+}
+.table th {
+  padding: var(--s-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-2);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  text-align: left;
+}
+.table td {
+  padding: var(--s-2);
+  border-bottom: 1px solid var(--line);
+}
+.table th:first-child,
+.table td:first-child {
+  width: 44px;
+}
+.rank {
+  color: var(--ink-2);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.who {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.whoName {
+  min-width: 0;
+  font-weight: 560;
+}
+.empty {
+  padding: var(--s-5);
+  border-radius: 16px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+@media (min-width: 900px) {
+  .tables {
+    grid-template-columns: 1fr 1fr;
+  }
+  .totals dd {
+    font-size: var(--t-xl);
+  }
+  .navInner,
+  .main {
+    padding-inline: var(--s-6);
+  }
+}

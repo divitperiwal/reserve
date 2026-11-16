@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Bike, Building2, HandHeart, PackagePlus, Soup, Store, type LucideIcon } from 'lucide-react';
 import { ButtonLink, Logo, Skeleton } from '../../components/ui';
 import { homeFor, useAuth } from '../../lib/auth';
@@ -31,6 +32,7 @@ export default function LandingPage() {
           <nav className={s.links} aria-label="Sections">
             <a href="#how">How it works</a>
             <a href="#impact">Impact</a>
+            <Link to="/leaderboard">Leaderboard</Link>
             <a href="#roles">Who it’s for</a>
           </nav>
           <div className={s.navActions}>
@@ -159,6 +161,9 @@ function Impact() {
           </div>
         ))}
       </dl>
+      <ButtonLink to="/leaderboard" variant="ghost" className={s.roleLink}>
+        See the leaderboard
+      </ButtonLink>
     </section>
   );
 }

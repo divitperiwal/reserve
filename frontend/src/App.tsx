@@ -9,6 +9,8 @@ const VolunteerApp = lazy(() => import('./features/volunteer/VolunteerApp'));
 const DonorApp = lazy(() => import('./features/donor/DonorApp'));
 const NgoApp = lazy(() => import('./features/ngo/NgoApp'));
 const TrackPage = lazy(() => import('./features/tracking/TrackPage'));
+const LeaderboardPage = lazy(() => import('./features/leaderboard/LeaderboardPage'));
+const CertificatePage = lazy(() => import('./features/impact/CertificatePage'));
 
 export default function App() {
   return (
@@ -23,7 +25,9 @@ export default function App() {
               <Route path="/donor/*" element={<RequireRole roles={['DONOR']}><DonorApp /></RequireRole>} />
               <Route path="/ngo/*" element={<RequireRole roles={['NGO']}><NgoApp /></RequireRole>} />
               <Route path="/track/:id" element={<RequireRole roles={['DONOR', 'NGO', 'VOLUNTEER']}><TrackPage /></RequireRole>} />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
+              <Route path="/certificate" element={<RequireRole roles={['DONOR', 'NGO', 'VOLUNTEER']}><CertificatePage /></RequireRole>} />
+              <Route path="*"element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
         </ToastProvider>

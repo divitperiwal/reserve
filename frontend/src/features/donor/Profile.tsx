@@ -3,20 +3,13 @@ import { LogOut } from 'lucide-react';
 import { Avatar, Badge, Button } from '../../components/ui';
 import { Columns, Page, Panel, Topbar } from '../../components/dash';
 import { useAuth } from '../../lib/auth';
-import { num } from '../../lib/format';
-import { useDonorData } from './DonorData';
-import { co2For, kgLabel } from './donorKit';
+import { ImpactCard } from '../impact/ImpactCard';
 import s from './pages.module.css';
 
 export default function Profile() {
   const { user, signOut } = useAuth();
-  const { items } = useDonorData();
   const navigate = useNavigate();
   if (!user) return null;
-
-  const delivered = (items ?? []).filter((d) => d.status === 'DELIVERED');
-  const meals = delivered.reduce((a, d) => a + d.meals, 0);
-  const kg = delivered.reduce((a, d) => a + d.weightKg, 0);
 
   return (
     <Page>
@@ -52,26 +45,7 @@ export default function Profile() {
         }
         side={
           <>
-            <Panel title="Your impact">
-              <dl className={s.impact}>
-                <div>
-                  <dt>Meals shared</dt>
-                  <dd>{items ? num(meals) : '–'}</dd>
-                </div>
-                <div>
-                  <dt>Deliveries</dt>
-                  <dd>{items ? num(delivered.length) : '–'}</dd>
-                </div>
-                <div>
-                  <dt>Food saved</dt>
-                  <dd>{items ? kgLabel(kg) : '–'}</dd>
-                </div>
-                <div>
-                  <dt>CO₂e avoided</dt>
-                  <dd>{items ? kgLabel(co2For(kg)) : '–'}</dd>
-                </div>
-              </dl>
-            </Panel>
+            <ImpactCard mealsLabel="Meals shared" />
             <Panel title="Account">
               <div className={s.account}>
                 <p>Signed in as {user.name}.</p>

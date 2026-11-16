@@ -7,6 +7,7 @@ import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { num } from '../../lib/format';
 import type { MyStats } from '../../lib/types';
+import { ImpactCard } from '../impact/ImpactCard';
 import p from './page.module.css';
 
 export function Profile() {
@@ -60,6 +61,7 @@ export function Profile() {
         }
         side={
           <>
+            <ImpactCard mealsLabel="Meals received" />
             <Panel title={stats?.monthLabel ?? 'This month'}>
               <dl className={p.impact}>
                 <div>
