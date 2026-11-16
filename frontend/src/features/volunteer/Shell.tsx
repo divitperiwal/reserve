@@ -3,15 +3,14 @@ import { Award, Bike, CircleUserRound } from 'lucide-react';
 import { useT } from '../../lib/i18n';
 import f from './rider.module.css';
 
-const tabs = [
-  { to: '/volunteer', label: 'Task', icon: Bike, end: true },
-  { to: '/volunteer/impact', label: 'Impact', icon: Award },
-  { to: '/volunteer/profile', label: 'Profile', icon: CircleUserRound },
-];
-
 // Phone app chrome: content plus a bottom tab bar, on every screen size
 export function Shell() {
   const t = useT();
+  const tabs = [
+    { to: '/volunteer', label: t('Task'), icon: Bike, end: true },
+    { to: '/volunteer/impact', label: t('Impact'), icon: Award },
+    { to: '/volunteer/profile', label: t('Profile'), icon: CircleUserRound },
+  ];
   return (
     <>
       <Outlet />
@@ -19,7 +18,7 @@ export function Shell() {
         {tabs.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className={({ isActive }) => (isActive ? `${f.tab} ${f.tabActive}` : f.tab)}>
             <Icon size={24} strokeWidth={1.75} aria-hidden />
-            <span>{t(label)}</span>
+            <span>{label}</span>
           </NavLink>
         ))}
       </nav>

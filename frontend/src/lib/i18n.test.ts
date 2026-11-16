@@ -44,4 +44,37 @@ describe('translate', () => {
     expect(unitName('PACKS', t, 1)).toBe('<pack>');
     expect(unitName('PACKS', t, 3)).toBe('<packs>');
   });
+
+  it('has a ta and hi entry for every t() string in the source', () => {
+    const files = import.meta.glob(['../**/*.{ts,tsx}', '!../locales/**', '!../**/*.test.*'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+    const local = new Set(['bestBefore', 'pickupFrom', 'pickupUntil']);
+    const keys = new Set<string>();
+    for (const src of Object.values(files)) {
+      for (const call of src.matchAll(/\b(?:t|tr)\(/g)) {
+        let depth = 1;
+        let quote = '';
+        let i = call.index + call[0].length;
+        const start = i;
+        // First argument only: stop at the top-level comma, skipping commas inside strings
+        for (; i < src.length; i++) {
+          const c = src[i]!;
+          if (quote) {
+            if (c === '\\') i++;
+            else if (c === quote) quote = '';
+          } else if (c === "'" || c === '"') quote = c;
+          else if (c === '(') depth++;
+          else if (c === ')' && --depth === 0) break;
+          else if (c === ',' && depth === 1) break;
+        }
+        const arg = src.slice(start, i);
+        for (const m of arg.matchAll(/(^|[?:]|\?\?|\|\|)\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g)) keys.add((m[2] ?? m[3])!.replaceAll("\\'", "'"));
+      }
+    }
+    expect(keys.size).toBeGreaterThan(300);
+    for (const key of keys) {
+      if (local.has(key)) continue;
+      expect(ta, key).toHaveProperty([key]);
+      expect(hi, key).toHaveProperty([key]);
+    }
+  });
 });

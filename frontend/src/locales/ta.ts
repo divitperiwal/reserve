@@ -55,7 +55,7 @@ export const ta: Record<string, string> = {
   'Pick up': 'எடுக்கும் இடம்',
   Drop: 'கொடுக்கும் இடம்',
   Skip: 'வேண்டாம்',
-  'Accept, about {m} min': 'ஏற்கிறேன், சுமார் {m} நிமிடம்',
+  'Accept, about {m} min': 'ஏற்றுக்கொள்ளுங்கள், சுமார் {m} நிமிடம்',
 
   // Auth
   'Good food should reach a plate, not a bin.': 'நல்ல உணவு குப்பைத் தொட்டிக்கு அல்ல, தட்டுக்குப் போக வேண்டும்.',
@@ -673,4 +673,7 @@ export const ta: Record<string, string> = {
   Pickups: 'பிக்அப்கள்',
   'No donations in this period yet.': 'இந்தக் காலத்தில் இன்னும் நன்கொடை இல்லை.',
   Rank: 'இடம்',
+  Task: 'பணி',
+  Vegetarian: 'சைவம்',
+  'Non-vegetarian': 'அசைவம்',
 };

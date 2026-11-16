@@ -6,7 +6,7 @@ import { Columns, Kpi, KpiRow, Page, Panel, SectionHead, Topbar } from '../../co
 import { api, shownError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { num } from '../../lib/format';
-import { useT } from '../../lib/i18n';
+import { fill, useT } from '../../lib/i18n';
 import { useStream, useStreamStatus } from '../../lib/stream';
 import { ago, useNow } from '../../lib/time';
 import type { Activity, Donation } from '../../lib/types';
@@ -188,7 +188,7 @@ function ActivityPanel() {
       ) : (
         <ul className={s.feed}>
           {items.map((a) => {
-            const [before, after] = t(feedText[a.type], { name: '{name}', title: a.donationTitle }).split('{name}');
+            const [before, after] = t(feedText[a.type]).split('{name}').map((part) => fill(part, { title: a.donationTitle }));
             return (
               <li key={a.id} className={s.feedItem} data-type={a.type}>
                 <span className={s.feedDot} aria-hidden />

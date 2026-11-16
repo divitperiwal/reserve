@@ -671,4 +671,7 @@ export const hi: Record<string, string> = {
   Pickups: 'पिकअप',
   'No donations in this period yet.': 'इस अवधि में अभी कोई दान नहीं आया।',
   Rank: 'रैंक',
+  Task: 'काम',
+  Vegetarian: 'शाकाहारी',
+  'Non-vegetarian': 'मांसाहारी',
 };
