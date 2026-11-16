@@ -1,3 +1,4 @@
+import { fill, type T } from './i18n';
 import type { Category, Donation, Status, Unit } from './types';
 
 export const categoryLabel: Record<Category, string> = {
@@ -9,6 +10,10 @@ export const categoryLabel: Record<Category, string> = {
 };
 
 export const unitLabel: Record<Unit, string> = { SERVINGS: 'servings', KG: 'kg', PACKS: 'packs' };
+const unitOne: Record<Unit, string> = { SERVINGS: 'serving', KG: 'kg', PACKS: 'pack' };
+
+// Unit word for an amount, singular for one; kg is never translated
+export const unitName = (u: Unit, t: T = fill, n = 2) => (u === 'KG' ? 'kg' : t(n === 1 ? unitOne[u] : unitLabel[u]));
 
 export const statusLabel: Record<Status, string> = {
   AVAILABLE: 'Needs a kitchen',
@@ -20,7 +25,7 @@ export const statusLabel: Record<Status, string> = {
   CANCELLED: 'Cancelled',
 };
 
-export const qty = (d: Pick<Donation, 'quantity' | 'unit'>) => `${d.quantity} ${unitLabel[d.unit]}`;
+export const qty = (d: Pick<Donation, 'quantity' | 'unit'>, t: T = fill) => `${d.quantity} ${unitName(d.unit, t, d.quantity)}`;
 
 export const km = (n?: number) => (n === undefined ? '' : `${n < 10 ? n.toFixed(1) : Math.round(n)} km`);
 
@@ -47,12 +52,15 @@ export function haversineKm(a: { lat: number; lng: number }, b: { lat: number; l
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
+export const NO_LOCATION = 'Location isn’t available on this device.';
+export const LOCATION_DENIED = 'Allow location access, or type your address instead.';
+
 export function currentPosition(): Promise<{ lat: number; lng: number }> {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) return reject(new Error('Location isn’t available on this device.'));
+    if (!navigator.geolocation) return reject(new Error(NO_LOCATION));
     navigator.geolocation.getCurrentPosition(
       (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => reject(new Error('Allow location access, or type your address instead.')),
+      () => reject(new Error(LOCATION_DENIED)),
       { enableHighAccuracy: true, timeout: 10_000 },
     );
   });

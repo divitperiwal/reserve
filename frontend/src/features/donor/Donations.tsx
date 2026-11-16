@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Plus, Soup } from 'lucide-react';
 import { Button, ButtonLink, EmptyState, Segmented, Skeleton } from '../../components/ui';
 import { Kpi, KpiRow, Page, Panel, Topbar } from '../../components/dash';
+import { shownError } from '../../lib/api';
 import { num } from '../../lib/format';
+import { useT } from '../../lib/i18n';
 import type { Donation } from '../../lib/types';
 import { DonationSheet } from './DonationSheet';
 import { DonationTable } from './DonationTable';
@@ -28,6 +30,7 @@ const empties: Record<Filter, string> = {
 
 export default function Donations() {
   const { items, error, reload } = useDonorData();
+  const t = useT();
   const [filter, setFilter] = useState<Filter>('all');
   const [openId, setOpenId] = useState<number | null>(null);
   const list = (items ?? []).filter(matches[filter]);
@@ -40,42 +43,42 @@ export default function Donations() {
   return (
     <Page>
       <Topbar
-        title="Donations"
-        subtitle="Everything you have posted"
+        title={t('Donations')}
+        subtitle={t('Everything you have posted')}
         actions={
           <ButtonLink to="/donor/new" icon={<Plus size={18} strokeWidth={2.25} aria-hidden />}>
-            Post food
+            {t('Post food')}
           </ButtonLink>
         }
       />
 
       <KpiRow>
-        <Kpi label="Total posted" value={val(items?.length ?? 0)} />
-        <Kpi label="Delivered" value={val(delivered.length)} />
-        <Kpi label="Live now" value={val(live.length)} tone={live.length ? 'basil' : undefined} />
-        <Kpi label="Meals shared" value={val(meals)} />
+        <Kpi label={t('Total posted')} value={val(items?.length ?? 0)} />
+        <Kpi label={t('Delivered')} value={val(delivered.length)} />
+        <Kpi label={t('Live now')} value={val(live.length)} tone={live.length ? 'basil' : undefined} />
+        <Kpi label={t('Meals shared')} value={val(meals)} />
       </KpiRow>
 
       {!items && error ? (
-        <EmptyState icon={Soup} title="Couldn’t load your donations" action={<Button variant="secondary" onClick={reload}>Try again</Button>}>
-          {error}
+        <EmptyState icon={Soup} title={t('Couldn’t load your donations')} action={<Button variant="secondary" onClick={reload}>{t('Try again')}</Button>}>
+          {shownError(error, t)}
         </EmptyState>
       ) : (
         <>
           <div className={s.filters}>
             <Segmented
-              label="Show"
+              label={t('Show')}
               value={filter}
               onChange={setFilter}
               options={[
-                { value: 'all', label: 'All' },
-                { value: 'live', label: 'Live' },
-                { value: 'delivered', label: 'Delivered' },
-                { value: 'expired', label: 'Expired' },
+                { value: 'all', label: t('All') },
+                { value: 'live', label: t('Live') },
+                { value: 'delivered', label: t('Delivered') },
+                { value: 'expired', label: t('Expired') },
               ]}
             />
           </div>
-          <Panel title={titles[filter]} action={items && <span className={s.count}>{list.length}</span>} flush>
+          <Panel title={t(titles[filter])} action={items && <span className={s.count}>{list.length}</span>} flush>
             {!items ? (
               <div className={s.skel}>
                 {[0, 1, 2, 3].map((i) => (
@@ -83,7 +86,7 @@ export default function Donations() {
                 ))}
               </div>
             ) : (
-              <DonationTable items={list} onOpen={setOpenId} label={titles[filter]} empty={empties[filter]} />
+              <DonationTable items={list} onOpen={setOpenId} label={t(titles[filter])} empty={t(empties[filter])} />
             )}
           </Panel>
         </>

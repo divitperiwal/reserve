@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { cx } from '../../components/ui';
+import { useT } from '../../lib/i18n';
 import s from './stage.module.css';
 
 interface MapStageProps {
@@ -15,15 +16,16 @@ interface MapStageProps {
 // Full-screen map with one floating card: top-left on desktop, an expandable bottom sheet on phones
 export function MapStage({ map, onBack, backLabel, children, more, busy }: MapStageProps) {
   const [open, setOpen] = useState(false);
+  const t = useT();
   return (
     <main className={s.stage}>
       <div className={s.map}>{map}</div>
       <button type="button" className={s.floatBack} onClick={onBack} aria-label={backLabel}>
         <ChevronLeft size={22} strokeWidth={1.75} aria-hidden />
       </button>
-      <section className={s.card} aria-busy={busy || undefined} aria-label="Pickup status">
+      <section className={s.card} aria-busy={busy || undefined} aria-label={t('Pickup status')}>
         {more ? (
-          <button type="button" className={s.grabber} onClick={() => setOpen(!open)} aria-expanded={open} aria-label={open ? 'Show less' : 'Show more'}>
+          <button type="button" className={s.grabber} onClick={() => setOpen(!open)} aria-expanded={open} aria-label={open ? t('Show less') : t('Show more')}>
             <span aria-hidden />
           </button>
         ) : (

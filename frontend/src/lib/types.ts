@@ -3,6 +3,7 @@ export type Diet = 'VEG' | 'NON_VEG';
 export type Category = 'COOKED' | 'BAKERY' | 'FRUIT_VEG' | 'PACKAGED' | 'RAW';
 export type Unit = 'SERVINGS' | 'KG' | 'PACKS';
 export type Status = 'AVAILABLE' | 'ACCEPTED' | 'CLAIMED' | 'PICKED_UP' | 'DELIVERED' | 'EXPIRED' | 'CANCELLED';
+export type Source = 'APP' | 'VOICE';
 export type SafetyCheck = 'COVERED' | 'SAFE_TEMP' | 'NO_RETURNS' | 'ALLERGENS_NOTED';
 export type Urgency = 'CRITICAL' | 'SOON' | 'FRESH' | 'EXPIRED';
 
@@ -72,6 +73,7 @@ export interface Donation {
   pickupUntil: string;
   safetyChecks: SafetyCheck[];
   status: Status;
+  source: Source;
   donor: PersonRef;
   volunteer?: PersonRef;
   ngo?: NgoRef;
@@ -106,6 +108,18 @@ export interface CreateDonation {
   safetyChecks: SafetyCheck[];
 }
 
+export interface DonationDraft {
+  title?: string;
+  diet?: Diet;
+  category?: Category;
+  quantity?: number;
+  unit?: Unit;
+  bestBeforeMinutes?: number;
+  pickupFromMinutes?: number;
+  pickupUntilMinutes?: number;
+  note?: string;
+}
+
 export interface PublicStats {
   mealsRescued: number;
   foodKg: number;
@@ -125,6 +139,8 @@ export interface MyStats {
   donations?: number;
   live?: number;
   nextBadge?: { name: string; current: number; target: number };
+  allTime: { count: number; meals: number; foodKg: number; co2Kg: number; since: string };
+  earnedBadges: string[];
 }
 
 export interface DashboardStats {
@@ -141,6 +157,34 @@ export interface DashboardStats {
   categories: { category: Category; pct: number }[];
   topVolunteers: { id: number; name: string; initials: string; pickups: number; meals: number }[];
   co2Kg: number;
+}
+
+export interface Leaderboard {
+  days: number;
+  meals: number;
+  foodKg: number;
+  co2Kg: number;
+  volunteers: { id: number; name: string; initials: string; pickups: number; meals: number; badge?: string }[];
+  donors: { id: number; name: string; initials: string; donations: number; meals: number }[];
+}
+
+export interface SurplusForecastEntry {
+  donorId: number;
+  donorName: string;
+  address: string;
+  lat: number;
+  lng: number;
+  from: string;
+  until: string;
+  expectedMeals: number;
+  weeksSeen: number;
+  weeksLooked: number;
+}
+
+export interface SurplusMap {
+  days: number;
+  points: { lat: number; lng: number; kg: number; status: Status }[];
+  forecast: SurplusForecastEntry[];
 }
 
 export interface Activity {
@@ -166,4 +210,14 @@ export interface LocationEvent {
 export interface AuthResponse {
   token: string;
   user: User;
+}
+
+export interface PushKey {
+  enabled: boolean;
+  publicKey?: string;
+}
+
+export interface PushSubscriptionInput {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
 }

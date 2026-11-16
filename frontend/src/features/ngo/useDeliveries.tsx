@@ -100,11 +100,4 @@ export function etaMinutes(d: Donation, ngo: { lat: number; lng: number }): numb
   return Math.max(1, Math.round((km / RIDE_KMH) * 60));
 }
 
-export function away(min: number): string {
-  const m = Math.max(1, Math.round(min));
-  if (m < 60) return `about ${m} min away`;
-  const h = Math.floor(m / 60);
-  return m % 60 ? `about ${h} h ${m % 60} min away` : `about ${h} h away`;
-}
-
 export const firstName = (name: string) => name.split(/\s+/)[0] ?? name;

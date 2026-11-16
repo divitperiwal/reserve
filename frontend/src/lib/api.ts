@@ -3,16 +3,33 @@ import type {
   AuthResponse,
   CreateDonation,
   DashboardStats,
+  DonationDraft,
   Donation,
   GeoPoint,
+  Leaderboard,
   MyStats,
   NgoRef,
   PublicStats,
+  PushKey,
+  PushSubscriptionInput,
   Role,
+  SurplusMap,
   User,
 } from './types';
+import { LOCATION_DENIED, NO_LOCATION } from './format';
+import type { T } from './i18n';
 
 const TOKEN_KEY = 'reserve.token';
+const OFFLINE = 'Can’t reach ReServe. Check your connection and try again.';
+const UPLOAD_FAILED = 'Upload failed';
+const clientMessages = new Set([OFFLINE, UPLOAD_FAILED, NO_LOCATION, LOCATION_DENIED]);
+
+// Messages raised in the browser are translated where shown; server messages stay as sent
+export function shownError(message: string, t: T) {
+  const failed = /^Request failed \((\d+)\)$/.exec(message);
+  if (failed) return t('Request failed ({status})', { status: failed[1]! });
+  return clientMessages.has(message) ? t(message) : message;
+}
 
 export class ApiError extends Error {
   status: number;
@@ -42,16 +59,15 @@ export const tokenStore = {
   },
 };
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown, token = tokenStore.get()): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  const token = tokenStore.get();
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   let res: Response;
   try {
     res = await fetch(`/api${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   } catch {
-    throw new ApiError(0, 'Can’t reach ReServe. Check your connection and try again.');
+    throw new ApiError(0, OFFLINE);
   }
   if (res.status === 401 && token) {
     tokenStore.set(null);
@@ -128,13 +144,23 @@ export const api = {
     body.append('file', file);
     const res = await fetch('/api/uploads', { method: 'POST', body, headers: { Authorization: `Bearer ${tokenStore.get() ?? ''}` } });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new ApiError(res.status, data.message ?? 'Upload failed', data.fields);
+    if (!res.ok) throw new ApiError(res.status, data.message ?? UPLOAD_FAILED, data.fields);
     return data;
   },
+
+  aiStatus: () => request<{ enabled: boolean }>('GET', '/ai/status'),
+  aiDraft: (input: { photoUrl: string } | { text: string }) => request<DonationDraft>('POST', '/ai/draft', input),
+
+  pushKey: () => request<PushKey>('GET', '/push/key'),
+  pushSubscribe: (input: PushSubscriptionInput) => request<void>('POST', '/push/subscribe', input),
+  pushSubscribed: (endpoint: string) => request<{ subscribed: boolean }>('GET', `/push/subscribed${qs({ endpoint })}`),
+  pushUnsubscribe: (endpoint: string, token?: string) => request<void>('POST', '/push/unsubscribe', { endpoint }, token),
 
   publicStats: () => request<PublicStats>('GET', '/stats/public'),
   myStats: () => request<MyStats>('GET', '/stats/me'),
   dashboard: (days: 7 | 30) => request<DashboardStats>('GET', `/stats/dashboard?days=${days}`),
+  leaderboard: (days = 30) => request<Leaderboard>('GET', `/stats/leaderboard?days=${days}`),
+  surplus: (days = 56) => request<SurplusMap>('GET', `/stats/surplus?days=${days}`),
   activity: (limit = 20) => request<Activity[]>('GET', `/activity?limit=${limit}`),
   exportUrl: (days: 7 | 30) => `/api/export.csv${qs({ days, token: tokenStore.get() })}`,
   streamUrl: () => `/api/stream${qs({ token: tokenStore.get() })}`,

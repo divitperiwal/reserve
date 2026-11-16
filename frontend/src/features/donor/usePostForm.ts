@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../../lib/api';
+import { useT, type T } from '../../lib/i18n';
 import { useNow } from '../../lib/time';
-import type { Category, CreateDonation, Diet, Donation, SafetyCheck, Unit, User } from '../../lib/types';
+import type { Category, CreateDonation, Diet, Donation, DonationDraft, SafetyCheck, Unit, User } from '../../lib/types';
+import { draftToForm } from './draftToForm';
 import { dateKey, joinDateTime, roundQuarter, shelfLife, timeKey, weightFor, whenPhrase } from './donorKit';
 
 export interface PostValues {
@@ -107,31 +109,31 @@ export interface TimingIssue {
   fix: string;
 }
 
-function validate(v: PostValues, now: number) {
+function validate(v: PostValues, now: number, tr: T) {
   const e: Partial<Record<FieldKey, string>> = {};
   let issue: TimingIssue | null = null;
   const title = v.title.trim();
-  if (!title) e.title = 'Add a name for the food';
-  else if (title.length > 80) e.title = 'Keep the name under 80 characters';
-  if (!Number.isInteger(v.quantity) || v.quantity < 1) e.quantity = 'Set at least 1';
-  else if (v.quantity > 9999) e.quantity = 'That is more than we can list at once';
-  if (!v.address.trim()) e.address = 'Add the pickup address';
+  if (!title) e.title = tr('Add a name for the food');
+  else if (title.length > 80) e.title = tr('Keep the name under 80 characters');
+  if (!Number.isInteger(v.quantity) || v.quantity < 1) e.quantity = tr('Set at least 1');
+  else if (v.quantity > 9999) e.quantity = tr('That is more than we can list at once');
+  if (!v.address.trim()) e.address = tr('Add the pickup address');
 
   const t = (k: TimeKey) => (v[k] ? new Date(v[k]).getTime() : NaN);
   const best = t('bestBefore');
   const from = t('pickupFrom');
   const until = t('pickupUntil');
-  if (Number.isNaN(best)) e.bestBefore = 'Set a best before time';
-  else if (best <= now) e.bestBefore = 'Best before has to be later than now';
-  if (Number.isNaN(from)) e.pickupFrom = 'Set when pickup can start';
-  if (Number.isNaN(until)) e.pickupUntil = 'Set when pickup ends';
-  else if (!Number.isNaN(from) && until <= from) e.pickupUntil = 'Pickup has to end after it starts';
+  if (Number.isNaN(best)) e.bestBefore = tr('Set a best before time');
+  else if (best <= now) e.bestBefore = tr('Best before has to be later than now');
+  if (Number.isNaN(from)) e.pickupFrom = tr('Set when pickup can start');
+  if (Number.isNaN(until)) e.pickupUntil = tr('Set when pickup ends');
+  else if (!Number.isNaN(from) && until <= from) e.pickupUntil = tr('Pickup has to end after it starts');
   else if (!Number.isNaN(best) && until > best) {
-    e.pickupUntil = 'Pickup has to end before best before';
-    issue = { until: whenPhrase(until), best: whenPhrase(best), fix: fixUntil(from, best) };
-  } else if (until <= now) e.pickupUntil = 'This pickup window has already ended';
+    e.pickupUntil = tr('Pickup has to end before best before');
+    issue = { until: whenPhrase(until, tr), best: whenPhrase(best, tr), fix: fixUntil(from, best) };
+  } else if (until <= now) e.pickupUntil = tr('This pickup window has already ended');
   const left = SAFETY.length - v.checks.length;
-  if (left > 0) e.checks = left === 1 ? '1 check left' : `${left} checks left`;
+  if (left > 0) e.checks = left === 1 ? tr('1 check left') : tr('{n} checks left', { n: left });
   return { errors: e, issue };
 }
 
@@ -166,6 +168,7 @@ export const toRepost = (d: Donation): Repost => ({
 
 export function usePostForm(user: User | null) {
   const now = useNow();
+  const t = useT();
   const location = useLocation();
   const navigate = useNavigate();
   const repost = (location.state as { repost?: Repost } | null)?.repost;
@@ -199,7 +202,7 @@ export function usePostForm(user: User | null) {
     return () => window.clearTimeout(id);
   }, [values]);
 
-  const { errors, issue } = useMemo(() => validate(values, now), [values, now]);
+  const { errors, issue } = useMemo(() => validate(values, now, t), [values, now, t]);
 
   const set = useCallback(<K extends keyof PostValues>(key: K, value: PostValues[K]) => {
     setValues((v) => ({ ...v, [key]: value }));
@@ -248,6 +251,14 @@ export function usePostForm(user: User | null) {
     setAutofilled(TIMES.every((k) => e.has(k)) ? null : values.category);
   }, [values.category]);
 
+  const applyDraft = useCallback((draft: DonationDraft) => {
+    const patch = draftToForm(draft, Date.now());
+    TIMES.forEach((k) => patch[k] && edited.current.add(k));
+    setValues((v) => ({ ...v, ...patch }));
+    setServer({});
+    setFormError(null);
+  }, []);
+
   const touch = useCallback((key: FieldKey) => setTouched((t) => (t.has(key) ? t : new Set(t).add(key))), []);
 
   const error = (key: FieldKey) => {
@@ -258,7 +269,7 @@ export function usePostForm(user: User | null) {
   const stepBlocker = (step: number) => {
     const key = STEP_FIELDS[step]?.find((k) => errors[k] || server[k]);
     if (key) return server[key] ?? errors[key]!;
-    if (step === STEPS.length - 1 && uploading) return 'Waiting for the photo to upload';
+    if (step === STEPS.length - 1 && uploading) return t('Waiting for the photo to upload');
     return null;
   };
 
@@ -319,6 +330,7 @@ export function usePostForm(user: User | null) {
     setDate,
     setWindow,
     autofillTimes,
+    applyDraft,
     autofilled,
     touch,
     error,

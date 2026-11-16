@@ -49,6 +49,10 @@ public class UploadService {
         return new FileSystemResource(dir.resolve(name));
     }
 
+    public byte[] read(String name) throws IOException {
+        return load(name).getContentAsByteArray();
+    }
+
     public MediaType typeOf(String name) {
         return TYPES.get(name.substring(name.lastIndexOf('.') + 1));
     }

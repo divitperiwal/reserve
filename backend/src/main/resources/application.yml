@@ -14,6 +14,7 @@ spring:
       ddl-auto: validate
     properties:
       hibernate.jdbc.time_zone: UTC
+      hibernate.default_batch_fetch_size: 50
   flyway:
     enabled: true
   jackson:
@@ -27,6 +28,13 @@ spring:
   mvc:
     async:
       request-timeout: -1
+  task:
+    execution:
+      thread-name-prefix: task-
+      pool:
+        core-size: ${APP_TASK_POOL_SIZE:2}
+        max-size: ${APP_TASK_POOL_SIZE:2}
+        queue-capacity: 200
 
 app:
   jwt:
@@ -36,4 +44,14 @@ app:
     dev: ${APP_OTP_DEV:true}
   upload-dir: ${APP_UPLOAD_DIR:./uploads}
   zone: Asia/Kolkata
+  ai:
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${AI_MODEL:claude-opus-5-5}
+    global-per-hour: ${AI_GLOBAL_PER_HOUR:200}
+  voice:
+    secret: ${VOICE_SECRET:}
+  push:
+    public-key: ${VAPID_PUBLIC_KEY:}
+    private-key: ${VAPID_PRIVATE_KEY:}
+    subject: ${VAPID_SUBJECT:mailto:admin@reserve.local}
   cors-origin: ${APP_CORS_ORIGINS:http://localhost:*,http://127.0.0.1:*}

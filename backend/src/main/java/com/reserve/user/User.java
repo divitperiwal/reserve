@@ -59,7 +59,7 @@ public class User {
         this.lng = lng;
     }
 
-    // "Priya S." becomes "PS", "Hope Kitchen Trust" becomes "HK"
+    // "Priya S." becomes "PS", "Annadhanam Seva Trust" becomes "AS"
     public String initials() {
         StringBuilder sb = new StringBuilder();
         for (String part : name.trim().split("\\s+")) {

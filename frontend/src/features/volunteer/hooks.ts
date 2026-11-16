@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../components/ui';
 import { api, ApiError } from '../../lib/api';
 import { haversineKm } from '../../lib/format';
+import { useT } from '../../lib/i18n';
+import { pointAlong, roadRoute, type RoadRoute } from '../../lib/route';
 import { useStream } from '../../lib/stream';
 import type { Donation, GeoPoint, MyStats } from '../../lib/types';
 import { etaMin, isActive, stepToward, type LatLng } from '../tracking/geo';
@@ -86,6 +88,7 @@ export function useActivePickupState(userId: number) {
 export function useClaim(onGone: (id: number) => void) {
   const { setActive } = useVolunteer();
   const toast = useToast();
+  const t = useT();
   const navigate = useNavigate();
   const [pending, setPending] = useState<number | null>(null);
 
@@ -95,7 +98,7 @@ export function useClaim(onGone: (id: number) => void) {
       try {
         const res = await api.claim(d.id);
         setActive(res);
-        toast(`Claimed. Head to ${d.donor.name}.`);
+        toast(t('Claimed. Head to {name}.', { name: d.donor.name }));
         navigate(`/volunteer/pickup/${d.id}`);
       } catch (e) {
         toast((e as Error).message, { error: true });
@@ -104,7 +107,7 @@ export function useClaim(onGone: (id: number) => void) {
         setPending(null);
       }
     },
-    [navigate, onGone, setActive, toast],
+    [navigate, onGone, setActive, toast, t],
   );
 
   return { pending, claim };
@@ -114,6 +117,7 @@ type GpsState = 'pending' | 'ok' | 'far' | 'denied' | 'unavailable';
 
 const FAR_KM = 30;
 const MOVE_KM = 0.3;
+const SIM_STEP_KM = 0.2;
 
 // Share the rider's position while a pickup is active, with a simulated ride for demos
 export function useLocationShare(d: Donation | null, onPoint: (p: GeoPoint) => void) {
@@ -166,19 +170,31 @@ export function useLocationShare(d: Donation | null, onPoint: (p: GeoPoint) => v
 
   const status = d?.status;
   useEffect(() => {
-    if (!active || !simulating) return;
+    const cur = dRef.current;
+    if (!active || !simulating || !cur) return;
+    const target = cur.status === 'PICKED_UP' && cur.ngo ? cur.ngo : { lat: cur.lat, lng: cur.lng };
+    const start = simPos.current ?? simStart(cur);
+    let live = true;
+    let timer = 0;
+    let road: RoadRoute | null = null;
+    let along = 0;
     const tick = () => {
-      const cur = dRef.current;
-      if (!cur) return;
-      const target = cur.status === 'PICKED_UP' && cur.ngo ? cur.ngo : { lat: cur.lat, lng: cur.lng };
-      const from = simPos.current ?? simStart(cur);
-      const next = stepToward(from, target, 0.2);
+      along += SIM_STEP_KM;
+      const next = road ? pointAlong(road.path, along) : stepToward(simPos.current ?? start, target, SIM_STEP_KM);
       simPos.current = next;
       send(next);
     };
-    tick();
-    const t = window.setInterval(tick, 3000);
-    return () => window.clearInterval(t);
+    // One road route per leg; if routing fails the ride falls back to a straight line
+    roadRoute([start, target]).then((r) => {
+      if (!live) return;
+      road = r;
+      tick();
+      timer = window.setInterval(tick, 3000);
+    });
+    return () => {
+      live = false;
+      window.clearInterval(timer);
+    };
   }, [active, simulating, status, send]);
 
   const canSimulate = simulating || gps === 'far' || gps === 'denied' || gps === 'unavailable';

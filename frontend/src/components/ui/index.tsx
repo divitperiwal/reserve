@@ -12,9 +12,13 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, type LinkProps } from 'react-router-dom';
-import { AlertCircle, Apple, Check, ChevronRight, Croissant, Package, Soup, Wheat, X, type LucideIcon } from 'lucide-react';
-import type { Category, Diet, Urgency } from '../../lib/types';
+import { AlertCircle, Apple, Check, ChevronRight, Croissant, Languages, Package, Phone, Soup, Wheat, X, type LucideIcon } from 'lucide-react';
+import type { Category, Diet, Donation, Urgency } from '../../lib/types';
+import { rescueRisk, type RiskLevel, type RiskOpts } from '../../lib/risk';
+import { span } from '../../features/tracking/geo';
 import { clock, urgencyOf, useNow } from '../../lib/time';
+import { isLang, useLang, useT, type Lang } from '../../lib/i18n';
+import { shownError } from '../../lib/api';
 import s from './ui.module.css';
 
 export const cx = (...c: (string | false | undefined | null)[]) => c.filter(Boolean).join(' ');
@@ -82,6 +86,34 @@ export function Badge({ tone = 'neutral', dot, children, className }: { tone?: T
   );
 }
 
+const riskTone: Record<RiskLevel, Tone> = { SAFE: 'fresh', TIGHT: 'soon', AT_RISK: 'critical' };
+
+// Will this food reach a kitchen before best-before, given the trip still ahead
+export function RiskBadge({ d, ...opts }: { d: Donation } & Omit<RiskOpts, 'now'>) {
+  const now = useNow();
+  const t = useT();
+  const { level, spareMin } = rescueRisk(d, { ...opts, now });
+  const time = span(Math.max(0, spareMin) * 60_000, t);
+  const text = level === 'AT_RISK' ? t('At risk') : level === 'SAFE' ? t('Safe, {time} to spare', { time }) : t('Tight, {time} to spare', { time });
+  return (
+    <Badge tone={riskTone[level]} dot className={s.risk}>
+      {text}
+    </Badge>
+  );
+}
+
+// Marks food a donor posted by calling the hotline
+export function PhoneBadge({ d }: { d: Pick<Donation, 'source'> }) {
+  const t = useT();
+  if (d.source !== 'VOICE') return null;
+  return (
+    <Badge className={s.phone}>
+      <Phone size={12} strokeWidth={2} aria-hidden />
+      {t('By phone')}
+    </Badge>
+  );
+}
+
 export const urgencyTone: Record<Urgency, Tone> = { CRITICAL: 'critical', SOON: 'soon', FRESH: 'fresh', EXPIRED: 'neutral' };
 
 export function Segmented<T extends string | number>({
@@ -114,6 +146,32 @@ export function Segmented<T extends string | number>({
         </button>
       ))}
     </div>
+  );
+}
+
+const LANGUAGES: { value: Lang; label: string }[] = [
+  { value: 'en', label: 'English' },
+  { value: 'ta', label: 'தமிழ்' },
+  { value: 'hi', label: 'हिन्दी' },
+];
+
+// Segmented buttons in settings, a small select in page headers
+export function LanguageSwitch({ compact, block }: { compact?: boolean; block?: boolean }) {
+  const [lang, setLang] = useLang();
+  const t = useT();
+  if (!compact) return <Segmented block={block} label={t('Language')} value={lang} onChange={setLang} options={LANGUAGES} />;
+  return (
+    <label className={s.lang}>
+      <Languages size={16} strokeWidth={1.75} aria-hidden />
+      <span className="sr-only">{t('Language')}</span>
+      <select value={lang} onChange={(e) => isLang(e.target.value) && setLang(e.target.value)}>
+        {LANGUAGES.map((l) => (
+          <option key={l.value} value={l.value} lang={l.value}>
+            {l.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -214,6 +272,7 @@ export function Toggle({ checked, onChange, label, disabled }: { checked: boolea
 
 // Bottom sheet on phones, centred dialog on larger screens; Escape and backdrop close it
 export function Sheet({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title?: ReactNode; children: ReactNode; footer?: ReactNode }) {
+  const t = useT();
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -228,13 +287,13 @@ export function Sheet({ open, onClose, title, children, footer }: { open: boolea
   if (!open) return null;
   return createPortal(
     <div className={s.sheetRoot}>
-      <button type="button" className={s.scrim} aria-label="Close" onClick={onClose} />
+      <button type="button" className={s.scrim} aria-label={t('Close')} onClick={onClose} />
       <div role="dialog" aria-modal="true" aria-label={typeof title === 'string' ? title : undefined} className={s.sheet}>
         <span className={s.grabber} aria-hidden />
         {title && (
           <header className={s.sheetHead}>
             <h2 className={s.sheetTitle}>{title}</h2>
-            <IconButton label="Close" plain onClick={onClose}>
+            <IconButton label={t('Close')} plain onClick={onClose}>
               <X size={18} strokeWidth={2} />
             </IconButton>
           </header>
@@ -303,18 +362,19 @@ export function Progress({ value, tone = 'green', label }: { value: number; tone
 // Live ticking countdown to best-before; only critical items turn red
 export function Countdown({ to, className, format = 'clock' }: { to: string; className?: string; format?: 'clock' | 'short' }) {
   const now = useNow();
+  const t = useT();
   const left = new Date(to).getTime() - now;
   const u = urgencyOf(to, now).toLowerCase();
   let text: string;
-  if (left <= 0) text = 'Expired';
+  if (left <= 0) text = t('Expired');
   else if (format === 'clock') text = clock(left);
   else {
     const m = Math.floor(left / 60_000);
     const h = Math.floor(m / 60);
-    text = h ? `${h}h ${m % 60}m left` : `${m % 60}m left`;
+    text = h ? t('{h}h {m}m left', { h, m: m % 60 }) : t('{m}m left', { m: m % 60 });
   }
   return (
-    <span className={cx(s.countdown, s[`cd-${u}`], className)} role="timer" aria-label={`${text} until best before`}>
+    <span className={cx(s.countdown, s[`cd-${u}`], className)} role="timer" aria-label={t('{time} until best before', { time: text })}>
       {text}
     </span>
   );
@@ -338,7 +398,8 @@ export function FoodGlyph({ category, size = 44, iconSize, className, style }: {
 }
 
 export function DietMark({ diet }: { diet: Diet }) {
-  return <span className={cx(s.diet, s[`d-${diet}`])} role="img" aria-label={diet === 'VEG' ? 'Vegetarian' : 'Non-vegetarian'} />;
+  const t = useT();
+  return <span className={cx(s.diet, s[`d-${diet}`])} role="img" aria-label={t(diet === 'VEG' ? 'Vegetarian' : 'Non-vegetarian')} />;
 }
 
 export function Skeleton({ w = '100%', h = 16, r, className }: { w?: number | string; h?: number | string; r?: number; className?: string }) {
@@ -366,8 +427,9 @@ export function LogoMark({ size = 28 }: { size?: number }) {
 }
 
 export function Logo({ to = '/', size = 28, className }: { to?: string; size?: number; className?: string }) {
+  const t = useT();
   return (
-    <Link to={to} className={cx(s.logo, className)} aria-label="ReServe home">
+    <Link to={to} className={cx(s.logo, className)} aria-label={t('ReServe home')}>
       <LogoMark size={size} />
       <span>ReServe</span>
     </Link>
@@ -376,14 +438,15 @@ export function Logo({ to = '/', size = 28, className }: { to?: string; size?: n
 
 // Claimed, picked up, delivered progress with the current step highlighted
 export function Stepper({ step, onDark }: { step: 0 | 1 | 2 | 3; onDark?: boolean }) {
-  const labels = ['Claimed', 'Picked up', 'Delivered'];
+  const t = useT();
+  const labels = [t('Claimed'), t('Picked up'), t('Delivered')];
   const dot = (i: number) => {
     const done = step > i || step === 3;
     const now = step === i && step !== 3;
     return <span className={cx(s.stepDot, done && s.stepDone, now && s.stepNow)}>{done && <Check size={12} strokeWidth={3} aria-hidden />}</span>;
   };
   return (
-    <div className={cx(onDark && s.onDark)} aria-label={`Status: ${labels[Math.min(step, 2)]}`}>
+    <div className={cx(onDark && s.onDark)} aria-label={t('Status: {status}', { status: labels[Math.min(step, 2)]! })}>
       <div className={s.stepper}>
         {dot(0)}
         <span className={cx(s.stepLine, step >= 1 && s.stepLineDone)} />
@@ -410,6 +473,7 @@ const ToastContext = createContext<(text: string, opts?: { error?: boolean }) =>
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
+  const t = useT();
   const push = useCallback((text: string, opts?: { error?: boolean }) => {
     const id = Date.now() + Math.random();
     setItems((xs) => [...xs.slice(-2), { id, text, error: opts?.error }]);
@@ -419,10 +483,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={push}>
       {children}
       <div className={s.toastHost} role="status" aria-live="polite">
-        {items.map((t) => (
-          <div key={t.id} className={cx(s.toast, t.error && s.toastError)}>
-            {t.error ? <AlertCircle size={18} aria-hidden /> : <Check size={18} aria-hidden />}
-            {t.text}
+        {items.map((item) => (
+          <div key={item.id} className={cx(s.toast, item.error && s.toastError)}>
+            {item.error ? <AlertCircle size={18} aria-hidden /> : <Check size={18} aria-hidden />}
+            {item.error ? shownError(item.text, t) : item.text}
           </div>
         ))}
       </div>

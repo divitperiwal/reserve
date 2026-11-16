@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { Plus, Soup } from 'lucide-react';
 import { Avatar, Badge, Button, ButtonLink, EmptyState, Skeleton } from '../../components/ui';
 import { Columns, Kpi, KpiRow, Page, Panel, SectionHead, Topbar } from '../../components/dash';
-import { api } from '../../lib/api';
+import { api, shownError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { foodImage } from '../../lib/food';
 import { haversineKm, km, num, qty, statusLabel, tonnes } from '../../lib/format';
+import { useLang, useT } from '../../lib/i18n';
 import type { Donation, NgoRef } from '../../lib/types';
 import { DonationSheet, PickupCloses, WaitingNote } from './DonationSheet';
 import { DonationTable } from './DonationTable';
@@ -19,6 +20,7 @@ const progressOf: Record<string, number> = { AVAILABLE: 0.12, ACCEPTED: 0.3, CLA
 export default function Home() {
   const { user } = useAuth();
   const { items, error, reload } = useDonorData();
+  const t = useT();
   const [openId, setOpenId] = useState<number | null>(null);
   const live = items?.filter(isLive) ?? [];
   const delivered = items?.filter((d) => d.status === 'DELIVERED') ?? [];
@@ -29,25 +31,25 @@ export default function Home() {
   return (
     <Page>
       <Topbar
-        title={`${greeting()}, ${user?.name ?? ''}`}
+        title={`${greeting(t)}, ${user?.name ?? ''}`}
         subtitle={user?.address}
         actions={
           <ButtonLink to="/donor/new" icon={<Plus size={18} strokeWidth={2.25} aria-hidden />}>
-            Post food
+            {t('Post food')}
           </ButtonLink>
         }
       />
 
       <KpiRow>
-        <Kpi label="Live now" value={items ? live.length : '–'} tone={live.length ? 'basil' : undefined} note={live.length ? 'In progress' : 'Nothing waiting'} />
-        <Kpi label="Meals shared" value={items ? num(meals) : '–'} note={`${delivered.length} deliveries`} />
-        <Kpi label="Food saved" value={items ? tonnes(kg) : '–'} note="Kept out of landfill" />
-        <Kpi label="CO₂e avoided" value={items ? tonnes(co2For(kg)) : '–'} note="2.5 kg per kg of food" />
+        <Kpi label={t('Live now')} value={items ? live.length : '–'} tone={live.length ? 'basil' : undefined} note={t(live.length ? 'In progress' : 'Nothing waiting')} />
+        <Kpi label={t('Meals shared')} value={items ? num(meals) : '–'} note={t('{n} deliveries', { n: delivered.length })} />
+        <Kpi label={t('Food saved')} value={items ? tonnes(kg) : '–'} note={t('Kept out of landfill')} />
+        <Kpi label={t('CO₂e avoided')} value={items ? tonnes(co2For(kg)) : '–'} note={t('2.5 kg per kg of food')} />
       </KpiRow>
 
       {!items && error ? (
-        <EmptyState icon={Soup} title="Couldn’t load your donations" action={<Button variant="secondary" onClick={reload}>Try again</Button>}>
-          {error}
+        <EmptyState icon={Soup} title={t('Couldn’t load your donations')} action={<Button variant="secondary" onClick={reload}>{t('Try again')}</Button>}>
+          {shownError(error, t)}
         </EmptyState>
       ) : (
         <Columns
@@ -56,7 +58,7 @@ export default function Home() {
               {items && live.length === 0 && <PostBanner />}
               {live.length > 0 && (
                 <section className={s.block}>
-                  <SectionHead title="Live now" count={live.length} />
+                  <SectionHead title={t('Live now')} count={live.length} />
                   <div className={s.liveGrid}>
                     {live.map((d) => (
                       <LiveCard key={d.id} d={d} onOpen={() => setOpenId(d.id)} />
@@ -64,7 +66,7 @@ export default function Home() {
                   </div>
                 </section>
               )}
-              <Panel title="Recent donations" action={<Link to="/donor/donations" className={s.link}>See all</Link>} flush>
+              <Panel title={t('Recent donations')} action={<Link to="/donor/donations" className={s.link}>{t('See all')}</Link>} flush>
                 {!items ? (
                   <div className={s.tableSkel}>
                     {[0, 1, 2].map((i) => (
@@ -72,7 +74,7 @@ export default function Home() {
                     ))}
                   </div>
                 ) : (
-                  <DonationTable items={items.filter((d) => !isLive(d)).slice(0, 8)} onOpen={setOpenId} label="Recent donations" empty="Delivered and past donations show up here." />
+                  <DonationTable items={items.filter((d) => !isLive(d)).slice(0, 8)} onOpen={setOpenId} label={t('Recent donations')} empty={t('Delivered and past donations show up here.')} />
                 )}
               </Panel>
             </>
@@ -80,7 +82,7 @@ export default function Home() {
           side={
             <>
               {live.length > 0 && <PostBanner compact />}
-              <Panel title="Last 14 days">{items ? <Spark items={items} /> : <Skeleton h={120} />}</Panel>
+              <Panel title={t('Last 14 days')}>{items ? <Spark items={items} /> : <Skeleton h={120} />}</Panel>
               <Kitchens />
             </>
           }
@@ -93,13 +95,14 @@ export default function Home() {
 }
 
 function PostBanner({ compact }: { compact?: boolean }) {
+  const t = useT();
   return (
     <section className={compact ? s.bannerCompact : s.banner}>
       <div className={s.bannerText}>
-        <h2>Got surplus food?</h2>
-        <p>Post it in under a minute. A kitchen nearby takes what it needs, then a volunteer delivers it.</p>
+        <h2>{t('Got surplus food?')}</h2>
+        <p>{t('Post it in under a minute. A kitchen nearby takes what it needs, then a volunteer delivers it.')}</p>
         <ButtonLink to="/donor/new" variant="dark" icon={<Plus size={18} strokeWidth={2.25} aria-hidden />}>
-          Post food
+          {t('Post food')}
         </ButtonLink>
       </div>
       {!compact && (
@@ -114,18 +117,19 @@ function PostBanner({ compact }: { compact?: boolean }) {
 }
 
 function LiveCard({ d, onOpen }: { d: Donation; onOpen: () => void }) {
+  const t = useT();
   const waiting = d.status === 'AVAILABLE' || d.status === 'ACCEPTED';
   return (
     <button type="button" className={s.live} onClick={onOpen}>
       <span className={s.liveMedia}>
         <img src={foodImage(d)} alt="" />
         <Badge tone="white" className={s.liveBadge}>
-          {statusLabel[d.status]}
+          {t(statusLabel[d.status])}
         </Badge>
       </span>
       <span className={s.liveBody}>
         <span className={s.liveTitle}>{d.title}</span>
-        <span className={s.liveStatus}>{statusText(d)}</span>
+        <span className={s.liveStatus}>{statusText(d, t)}</span>
         {waiting && <WaitingNote d={d} className={s.liveNote} />}
         <span className={s.liveBar} style={{ '--p': progressOf[d.status] ?? 0 } as CSSProperties} aria-hidden />
         <span className={s.liveFoot}>
@@ -135,9 +139,9 @@ function LiveCard({ d, onOpen }: { d: Donation; onOpen: () => void }) {
               {d.volunteer.name}
             </span>
           ) : (
-            <span className={s.who}>{qty(d)}</span>
+            <span className={s.who}>{qty(d, t)}</span>
           )}
-          {waiting ? <PickupCloses to={d.pickupUntil} className={s.liveTime} /> : <span className={s.trackLink}>Track</span>}
+          {waiting ? <PickupCloses to={d.pickupUntil} className={s.liveTime} /> : <span className={s.trackLink}>{t('Track')}</span>}
         </span>
       </span>
     </button>
@@ -146,30 +150,32 @@ function LiveCard({ d, onOpen }: { d: Donation; onOpen: () => void }) {
 
 // Meals delivered per day over the last two weeks
 function Spark({ items }: { items: Donation[] }) {
+  const t = useT();
+  const [lang] = useLang();
   const days = useMemo(() => {
     const out: { label: string; meals: number }[] = [];
     for (let i = 13; i >= 0; i--) {
       const day = new Date(Date.now() - i * 86_400_000).toDateString();
       const meals = items.filter((d) => d.status === 'DELIVERED' && new Date(d.deliveredAt ?? d.createdAt).toDateString() === day).reduce((a, d) => a + d.meals, 0);
-      out.push({ label: new Date(day).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), meals });
+      out.push({ label: new Date(day).toLocaleDateString(`${lang}-IN`, { day: 'numeric', month: 'short' }), meals });
     }
     return out;
-  }, [items]);
+  }, [items, lang]);
   const max = Math.max(1, ...days.map((d) => d.meals));
   const total = days.reduce((a, d) => a + d.meals, 0);
   return (
     <div className={s.spark}>
       <p className={s.sparkTotal}>
-        <strong>{num(total)}</strong> meals delivered
+        <strong>{num(total)}</strong> {t('meals delivered')}
       </p>
-      <div className={s.sparkBars} role="img" aria-label={`${total} meals delivered in the last 14 days`}>
+      <div className={s.sparkBars} role="img" aria-label={t('{n} meals delivered in the last 14 days', { n: total })}>
         {days.map((d, i) => (
-          <span key={i} title={`${d.label}: ${d.meals} meals`} style={{ height: `${Math.max(4, (d.meals / max) * 100)}%` }} data-zero={!d.meals || undefined} />
+          <span key={i} title={t('{day}: {n} meals', { day: d.label, n: d.meals })} style={{ height: `${Math.max(4, (d.meals / max) * 100)}%` }} data-zero={!d.meals || undefined} />
         ))}
       </div>
       <div className={s.sparkAxis} aria-hidden>
         <span>{days[0]!.label}</span>
-        <span>Today</span>
+        <span>{t('Today')}</span>
       </div>
     </div>
   );
@@ -177,13 +183,14 @@ function Spark({ items }: { items: Donation[] }) {
 
 function Kitchens() {
   const { user } = useAuth();
+  const t = useT();
   const [ngos, setNgos] = useState<NgoRef[] | null>(null);
   useEffect(() => {
     api.ngos().then(setNgos).catch(() => setNgos([]));
   }, []);
   const sorted = user && ngos ? [...ngos].sort((a, b) => haversineKm(user, a) - haversineKm(user, b)) : ngos;
   return (
-    <Panel title="Kitchens near you" flush>
+    <Panel title={t('Kitchens near you')} flush>
       {!sorted ? (
         <div className={s.tableSkel}>
           <Skeleton h={40} />

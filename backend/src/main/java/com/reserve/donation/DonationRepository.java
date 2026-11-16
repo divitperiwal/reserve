@@ -28,6 +28,22 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
 
     List<Donation> findByCreatedAtAfter(OffsetDateTime from);
 
+    List<Donation> findByStatusInAndCreatedAtAfter(Collection<Status> statuses, OffsetDateTime from);
+
+    List<Donation> findByVolunteerIdAndStatus(Long volunteerId, Status status);
+
+    List<Donation> findByDonorIdAndStatus(Long donorId, Status status);
+
+    List<Donation> findByNgoIdAndStatus(Long ngoId, Status status);
+
+    @Query("select d from Donation d join fetch d.donor left join fetch d.volunteer "
+            + "where d.status = com.reserve.donation.Status.DELIVERED and d.deliveredAt >= :from")
+    List<Donation> findDeliveredSince(@Param("from") OffsetDateTime from);
+
+    @Query("select d from Donation d join fetch d.donor "
+            + "where d.pickupFrom >= :from and d.status <> com.reserve.donation.Status.CANCELLED")
+    List<Donation> findForForecast(@Param("from") OffsetDateTime from);
+
     List<Donation> findByPickedUpAtAfter(OffsetDateTime from);
 
     List<Donation> findByDonorIdAndCreatedAtAfter(Long donorId, OffsetDateTime from);

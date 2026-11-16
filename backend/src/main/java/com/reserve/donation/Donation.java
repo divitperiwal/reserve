@@ -62,6 +62,9 @@ public class Donation {
     @Enumerated(EnumType.STRING)
     private Status status = Status.AVAILABLE;
 
+    @Enumerated(EnumType.STRING)
+    private Source source = Source.APP;
+
     @ManyToOne
     @JoinColumn(name = "volunteer_id")
     private User volunteer;
@@ -124,6 +127,7 @@ public class Donation {
         d.pickupUntil = pickupUntil;
         d.safetyChecks = safetyChecks;
         d.createdAt = createdAt;
+        d.source = source;
         d.pickupCode = DonationService.handoverCode();
         d.dropCode = DonationService.handoverCode();
         quantity -= part;
@@ -192,6 +196,8 @@ public class Donation {
     public void setPickupUntil(OffsetDateTime pickupUntil) { this.pickupUntil = pickupUntil; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
+    public Source getSource() { return source; }
+    public void setSource(Source source) { this.source = source; }
     public User getVolunteer() { return volunteer; }
     public void setVolunteer(User volunteer) { this.volunteer = volunteer; }
     public User getNgo() { return ngo; }

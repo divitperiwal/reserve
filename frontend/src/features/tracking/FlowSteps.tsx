@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import { cx } from '../../components/ui';
+import { useT } from '../../lib/i18n';
 import type { Donation } from '../../lib/types';
 import s from './flowSteps.module.css';
 
@@ -9,15 +10,16 @@ export const flowStep = (d: Donation): number => ({ AVAILABLE: 0, ACCEPTED: 1, C
 
 // Posted, kitchen accepted, volunteer on the way, picked up, delivered
 export function FlowSteps({ step }: { step: number }) {
+  const t = useT();
   return (
-    <ol className={s.steps} aria-label={`Status: ${LABELS[Math.min(step, 4)]}`}>
+    <ol className={s.steps} aria-label={t('Status: {status}', { status: t(LABELS[Math.min(step, 4)]!) })}>
       {LABELS.map((label, i) => {
         const done = step > i || step === 4;
         const now = step === i && step !== 4;
         return (
           <li key={label} className={cx(s.step, done && s.done)}>
             <span className={cx(s.dot, done && s.dotDone, now && s.dotNow)}>{done && <Check size={12} strokeWidth={3} aria-hidden />}</span>
-            <span className={s.label}>{label}</span>
+            <span className={s.label}>{t(label)}</span>
           </li>
         );
       })}

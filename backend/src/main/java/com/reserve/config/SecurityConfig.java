@@ -37,10 +37,12 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/stats/public", "/api/uploads/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/voice/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/stats/public", "/api/stats/leaderboard", "/api/uploads/**", "/api/push/key").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/donations/feed").hasAnyRole("VOLUNTEER", "NGO")
                         .requestMatchers(HttpMethod.POST, "/api/donations", "/api/uploads").hasRole("DONOR")
+                        .requestMatchers(HttpMethod.GET, "/api/ai/status").hasRole("DONOR")
+                        .requestMatchers(HttpMethod.POST, "/api/ai/draft").hasRole("DONOR")
                         .requestMatchers(HttpMethod.DELETE, "/api/donations/*").hasRole("DONOR")
                         .requestMatchers(HttpMethod.POST, "/api/donations/*/confirm-pickup").hasRole("DONOR")
                         .requestMatchers(HttpMethod.GET, "/api/donations/*/nearby-volunteers").hasRole("DONOR")
@@ -48,7 +50,7 @@ public class SecurityConfig {
                                 "/api/donations/*/withdraw").hasRole("NGO")
                         .requestMatchers(HttpMethod.POST, "/api/donations/*/claim", "/api/donations/*/release",
                                 "/api/donations/*/location").hasRole("VOLUNTEER")
-                        .requestMatchers(HttpMethod.GET, "/api/stats/dashboard", "/api/export.csv").hasRole("NGO")
+                        .requestMatchers(HttpMethod.GET, "/api/stats/dashboard", "/api/stats/surplus", "/api/export.csv").hasRole("NGO")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint((req, res, ex) -> writeError(res, mapper, 401, "Please sign in to continue"))

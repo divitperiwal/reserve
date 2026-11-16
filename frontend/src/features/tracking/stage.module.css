@@ -268,6 +268,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+.qr {
+  justify-self: center;
+  width: 192px;
+  height: 192px;
+  border-radius: 14px;
+  background: #fff;
+}
+
 /* Code entry sheet */
 .codeForm {
   display: grid;
@@ -304,6 +312,22 @@
 }
 .codeError {
   color: var(--red-ink);
+  font-size: var(--t-sm);
+}
+
+.scanner {
+  display: grid;
+  gap: var(--s-2);
+}
+.scannerVideo {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--r-card);
+  background: var(--dark);
+}
+.scannerHint {
+  color: var(--ink-2);
   font-size: var(--t-sm);
 }
 

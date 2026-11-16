@@ -19,13 +19,16 @@ import java.util.Comparator;
 import com.reserve.user.User;
 import com.reserve.user.UserRepository;
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +46,9 @@ public class DataSeeder implements ApplicationRunner {
     private record Template(User donor, String title, Diet diet, Category category, Unit unit, int minQty, int maxQty) {
     }
 
+    private record Pattern(Set<DayOfWeek> days, LocalTime from, LocalTime until, int minQty, int maxQty, List<Template> templates) {
+    }
+
     private final UserRepository users;
     private final DonationRepository donations;
     private final LocationPingRepository pings;
@@ -50,6 +56,7 @@ public class DataSeeder implements ApplicationRunner {
     private final PasswordEncoder encoder;
     private final ZoneId zone;
     private final Random random = new Random(2400);
+    private final Random history = new Random(42);
     private final List<Activity> feed = new ArrayList<>();
     private int listed;
     private String passwordHash;
@@ -74,24 +81,24 @@ public class DataSeeder implements ApplicationRunner {
         passwordHash = encoder.encode("reserve123");
         OffsetDateTime now = OffsetDateTime.now();
 
-        User hope = user(Role.NGO, "Hope Kitchen Trust", "9840100003", "Community kitchen", null, "14 GST Road, Guduvanchery", 12.8452, 80.0601, "4.9");
-        User littleHearts = user(Role.NGO, "Little Hearts Home", "9840100011", "Children's home", null, "7 Church Street, Tambaram West", 12.9246, 80.1103, "4.8");
-        User annai = user(Role.NGO, "Annai Shelter", "9840100012", "Shelter", null, "22 Anna Salai, Maraimalai Nagar", 12.7957, 80.0242, "4.7");
+        User hope = user(Role.NGO, "Annadhanam Seva Trust", "9840100003", "Community kitchen", null, "14 GST Road, Guduvanchery", 12.8452, 80.0601, "4.9");
+        User littleHearts = user(Role.NGO, "Asha Deepam Children's Home", "9840100011", "Children's home", null, "7 Church Street, Tambaram West", 12.9246, 80.1103, "4.8");
+        User annai = user(Role.NGO, "Karunai Illam Shelter", "9840100012", "Shelter", null, "22 Anna Salai, Maraimalai Nagar", 12.7957, 80.0242, "4.7");
 
         User kalyan = user(Role.DONOR, "Kalyan Mahal", "9840100001", "Event venue", null, "12 Rajaji Street, Kattankulathur", 12.8160, 80.0420, "4.8");
         User annapoorna = user(Role.DONOR, "Hotel Annapoorna", "9840100005", "Restaurant", null, "88 GST Road, Guduvanchery", 12.8476, 80.0623, "4.7");
-        User srmMess = user(Role.DONOR, "SRM Hostel Mess", "9840100006", "Hostel", null, "SRM Nagar, Potheri", 12.8231, 80.0430, "4.6");
+        User srmMess = user(Role.DONOR, "SRM Mess", "9840100006", "Hostel", null, "SRM Nagar, Potheri", 12.8231, 80.0430, "4.6");
         User spiceRoute = user(Role.DONOR, "Spice Route", "9840100007", "Restaurant", null, "3 Station Road, Maraimalai Nagar", 12.7915, 80.0250, "4.8");
         User sunrise = user(Role.DONOR, "Sunrise Bakery", "9840100008", "Bakery", null, "21 Main Road, Urapakkam", 12.8635, 80.0688, "4.9");
         User greenBasket = user(Role.DONOR, "Green Basket", "9840100009", "Grocery store", null, "5 Vandalur Road, Nandivaram", 12.8510, 80.0705, "4.7");
         User techPark = user(Role.DONOR, "TechPark Cafeteria", "9840100010", "Corporate cafeteria", null, "Estancia IT Park, Vallancherry", 12.8335, 80.0505, "4.8");
         User meena = user(Role.DONOR, "Meena's Kitchen", "9840100013", "Home kitchen", null, "9 Lakshmi Nagar, Kattankulathur", 12.8105, 80.0385, "5.0");
 
-        User krrish = user(Role.VOLUNTEER, "Krrish Pandey", "9840100002", "Student", "Scooter", "SRM Nagar, Potheri", 12.8231, 80.0442, "4.9");
+        User krrish = user(Role.VOLUNTEER, "Divit Periwal", "9840100002", "Student", "Scooter", "SRM Nagar, Potheri", 12.8231, 80.0442, "4.9");
         User ravi = user(Role.VOLUNTEER, "Ravi Kumar", "9840100004", "Delivery rider", "Motorbike", "Gandhi Road, Guduvanchery", 12.8440, 80.0580, "4.9");
-        User priya = user(Role.VOLUNTEER, "Priya S.", "9840100014", "Student", "Scooter", "Lake View Road, Urapakkam", 12.8650, 80.0690, "4.8");
-        User arjun = user(Role.VOLUNTEER, "Arjun M.", "9840100015", "Student", "Bicycle", "Thiru Vi Ka Street, Maraimalai Nagar", 12.7960, 80.0270, "4.7");
-        User nithya = user(Role.VOLUNTEER, "Nithya V.", "9840100016", "Teacher", "Scooter", "Kamaraj Street, Vandalur", 12.8920, 80.0810, "4.8");
+        User priya = user(Role.VOLUNTEER, "Priya Subramanian", "9840100014", "Student", "Scooter", "Lake View Road, Urapakkam", 12.8650, 80.0690, "4.8");
+        User arjun = user(Role.VOLUNTEER, "Arjun Menon", "9840100015", "Student", "Bicycle", "Thiru Vi Ka Street, Maraimalai Nagar", 12.7960, 80.0270, "4.7");
+        User nithya = user(Role.VOLUNTEER, "Nithya Venkatesan", "9840100016", "Teacher", "Scooter", "Kamaraj Street, Vandalur", 12.8920, 80.0810, "4.8");
         krrish.setDropNgo(hope);
 
         seedAvailable(now, annapoorna, spiceRoute, srmMess, meena, kalyan, techPark, sunrise, greenBasket);
@@ -105,7 +112,7 @@ public class DataSeeder implements ApplicationRunner {
                 new Template(spiceRoute, "Egg fried rice", Diet.NON_VEG, Category.COOKED, Unit.SERVINGS, 10, 25),
                 new Template(srmMess, "Chapati and dal", Diet.VEG, Category.COOKED, Unit.SERVINGS, 30, 80),
                 new Template(srmMess, "Curd rice", Diet.VEG, Category.COOKED, Unit.SERVINGS, 25, 60),
-                new Template(kalyan, "Wedding lunch: rice, sambar and poriyal", Diet.VEG, Category.COOKED, Unit.SERVINGS, 40, 120),
+                new Template(kalyan, "Reception dinner: rice, sambar and poriyal", Diet.VEG, Category.COOKED, Unit.SERVINGS, 40, 120),
                 new Template(kalyan, "Veg pulao", Diet.VEG, Category.COOKED, Unit.SERVINGS, 30, 80),
                 new Template(sunrise, "Bread loaves", Diet.VEG, Category.BAKERY, Unit.PACKS, 15, 40),
                 new Template(sunrise, "Buns and veg puffs", Diet.VEG, Category.BAKERY, Unit.PACKS, 20, 50),
@@ -114,14 +121,25 @@ public class DataSeeder implements ApplicationRunner {
                 new Template(greenBasket, "Bananas", Diet.VEG, Category.FRUIT_VEG, Unit.KG, 4, 15),
                 new Template(greenBasket, "Rice and toor dal", Diet.VEG, Category.RAW, Unit.KG, 5, 25),
                 new Template(techPark, "Veg meals", Diet.VEG, Category.COOKED, Unit.SERVINGS, 20, 50),
+                new Template(techPark, "Lunch thali", Diet.VEG, Category.COOKED, Unit.SERVINGS, 20, 50),
                 new Template(techPark, "Sandwiches", Diet.VEG, Category.PACKAGED, Unit.PACKS, 15, 40),
                 new Template(techPark, "Juice and biscuit packs", Diet.VEG, Category.PACKAGED, Unit.PACKS, 20, 60),
                 new Template(meena, "Idli and chutney", Diet.VEG, Category.COOKED, Unit.SERVINGS, 8, 20));
-        seedHistory(now, templates, List.of(krrish, ravi, priya, arjun, nithya), new double[] {0.11, 0.27, 0.22, 0.20, 0.20},
+        List<DayOfWeek> weekend = List.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
+        List<DayOfWeek> weekdays = List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+        List<Pattern> patterns = List.of(
+                pattern(weekend, 20, 0, 23, 0, 80, 120, templates, kalyan, Unit.SERVINGS),
+                pattern(weekdays, 14, 0, 16, 0, 30, 50, templates, srmMess, Unit.SERVINGS),
+                pattern(List.of(DayOfWeek.values()), 21, 0, 22, 30, 10, 20, templates, sunrise, Unit.PACKS),
+                pattern(weekdays, 15, 0, 17, 0, 20, 40, templates, techPark, Unit.SERVINGS),
+                pattern(List.of(DayOfWeek.FRIDAY, DayOfWeek.SATURDAY), 22, 0, 23, 30, 25, 45, templates, annapoorna, Unit.SERVINGS));
+        List<Template> scattered = templates.stream()
+                .filter(t -> t.donor() == spiceRoute || t.donor() == greenBasket || t.donor() == meena).toList();
+        seedHistory(now, patterns, scattered, List.of(krrish, ravi, priya, arjun, nithya), new double[] {0.11, 0.27, 0.22, 0.20, 0.20},
                 List.of(hope, annai, littleHearts), new double[] {0.5, 0.3, 0.2});
 
         activities.saveAll(feed);
-        log.info("Seeded demo data: {} users, {} donations, {} activities", users.count(), donations.count(), feed.size());
+        log.info("Seeded data: {} users, {} donations, {} activities", users.count(), donations.count(), feed.size());
     }
 
     private void seedAvailable(OffsetDateTime now, User annapoorna, User spiceRoute, User srmMess, User meena, User kalyan,
@@ -141,7 +159,7 @@ public class DataSeeder implements ApplicationRunner {
         available(now, techPark, "Veg meals", Diet.VEG, Category.COOKED, 45, Unit.SERVINGS, 220, "Lunch counter on the ground floor");
     }
 
-    // Keep the demo feed alive across restarts: repost fresh listings once most have expired
+    // Keep the feed alive across restarts: repost fresh listings once most have expired
     private void topUpFeed(OffsetDateTime now) {
         if (donations.findByStatusAndPickupUntilAfter(Status.AVAILABLE, now).size() + donations.findByStatusAndPickupUntilAfter(Status.ACCEPTED, now).size() >= 5) {
             return;
@@ -153,7 +171,7 @@ public class DataSeeder implements ApplicationRunner {
         }
         seedAvailable(now, donors.get(0), donors.get(1), donors.get(2), donors.get(3), donors.get(4), donors.get(5), donors.get(6), donors.get(7));
         activities.saveAll(feed);
-        log.info("Topped up the demo feed with fresh listings");
+        log.info("Topped up the feed with fresh listings");
     }
 
     private void available(OffsetDateTime now, User donor, String title, Diet diet, Category category, int qty, Unit unit,
@@ -224,41 +242,72 @@ public class DataSeeder implements ApplicationRunner {
         }
     }
 
-    // Deliveries for the last 30 days, slightly rising so period-over-period deltas are positive
-    private void seedHistory(OffsetDateTime now, List<Template> templates, List<User> volunteers, double[] volunteerWeights,
-                             List<User> ngos, double[] ngoWeights) {
-        LocalDate today = LocalDate.now(zone);
-        for (int back = 30; back >= 0; back--) {
-            LocalDate day = today.minusDays(back);
-            int count = 8 + random.nextInt(9) + (30 - back) / 8;
-            for (int i = 0; i < count; i++) {
-                OffsetDateTime posted = day.atTime(8 + random.nextInt(13), random.nextInt(60)).atZone(zone).toOffsetDateTime();
-                OffsetDateTime claimed = posted.plusMinutes(4 + random.nextInt(21));
-                OffsetDateTime picked = claimed.plusMinutes(10 + random.nextInt(31));
-                OffsetDateTime delivered = picked.plusMinutes(12 + random.nextInt(29));
-                if (!delivered.isBefore(now)) {
-                    continue;
-                }
-                Template t = templates.get(random.nextInt(templates.size()));
-                User volunteer = weighted(volunteers, volunteerWeights);
-                User ngo = weighted(ngos, ngoWeights);
-                OffsetDateTime bestBefore = random.nextInt(100) < 6 ? delivered.minusMinutes(10) : posted.plusHours(3 + random.nextInt(6));
-                int qty = t.minQty() + random.nextInt(t.maxQty() - t.minQty() + 1);
+    private Pattern pattern(List<DayOfWeek> days, int fromHour, int fromMinute, int untilHour, int untilMinute, int minQty,
+                            int maxQty, List<Template> templates, User donor, Unit unit) {
+        List<Template> mine = templates.stream().filter(t -> t.donor() == donor && t.unit() == unit).toList();
+        return new Pattern(EnumSet.copyOf(days), LocalTime.of(fromHour, fromMinute), LocalTime.of(untilHour, untilMinute), minQty, maxQty, mine);
+    }
 
-                Donation d = donation(t.donor(), t.title(), t.diet(), t.category(), qty, t.unit(), posted, bestBefore);
-                d.setStatus(Status.DELIVERED);
-                d.setVolunteer(volunteer);
-                d.setNgo(ngo);
-                d.setClaimedAt(claimed);
-                d.setPickedUpAt(picked);
-                d.setDeliveredAt(delivered);
-                donations.save(d);
-                feed.add(new Activity(ActivityType.POSTED, t.donor(), d, posted));
-                feed.add(new Activity(ActivityType.CLAIMED, volunteer, d, claimed));
-                feed.add(new Activity(ActivityType.PICKED_UP, volunteer, d, picked));
-                feed.add(new Activity(ActivityType.DELIVERED, volunteer, d, delivered));
+    // Eight weeks of recurring donor routines plus scattered posts, thinning out further back so recent periods grow
+    private void seedHistory(OffsetDateTime now, List<Pattern> patterns, List<Template> scattered, List<User> volunteers,
+                             double[] volunteerWeights, List<User> ngos, double[] ngoWeights) {
+        LocalDate today = LocalDate.now(zone);
+        List<Donation> batch = new ArrayList<>();
+        for (int back = 56; back >= 0; back--) {
+            LocalDate day = today.minusDays(back);
+            for (Pattern p : patterns) {
+                if (p.days().contains(day.getDayOfWeek()) && history.nextDouble() >= 0.15 * back / 56) {
+                    Template t = p.templates().get(history.nextInt(p.templates().size()));
+                    past(batch, now, t, day, p.from(), p.until(), p.minQty() + history.nextInt(p.maxQty() - p.minQty() + 1),
+                            volunteers, volunteerWeights, ngos, ngoWeights);
+                }
+            }
+            for (Template t : scattered) {
+                if (history.nextDouble() < 0.04 + 0.08 * (56 - back) / 56) {
+                    LocalTime from = LocalTime.of(11 + history.nextInt(9), 15 * history.nextInt(4));
+                    past(batch, now, t, day, from, from.plusHours(2), t.minQty() + history.nextInt(t.maxQty() - t.minQty() + 1),
+                            volunteers, volunteerWeights, ngos, ngoWeights);
+                }
             }
         }
+        donations.saveAll(batch);
+    }
+
+    private void past(List<Donation> batch, OffsetDateTime now, Template t, LocalDate day, LocalTime from, LocalTime until,
+                      int qty, List<User> volunteers, double[] volunteerWeights, List<User> ngos, double[] ngoWeights) {
+        OffsetDateTime pickupFrom = day.atTime(from).atZone(zone).toOffsetDateTime();
+        OffsetDateTime pickupUntil = day.atTime(until).atZone(zone).toOffsetDateTime();
+        OffsetDateTime posted = pickupFrom.minusMinutes(5 + history.nextInt(31));
+        OffsetDateTime claimed = pickupFrom.plusMinutes(history.nextInt(26));
+        OffsetDateTime picked = claimed.plusMinutes(10 + history.nextInt(31));
+        OffsetDateTime delivered = picked.plusMinutes(12 + history.nextInt(29));
+        OffsetDateTime bestBefore = pickupUntil.plusMinutes(45);
+        boolean expired = history.nextDouble() < 0.12;
+        User volunteer = weighted(volunteers, volunteerWeights);
+        User ngo = weighted(ngos, ngoWeights);
+        if (!(expired ? bestBefore : delivered).isBefore(now)) {
+            return;
+        }
+
+        Donation d = donation(t.donor(), t.title(), t.diet(), t.category(), qty, t.unit(), posted, bestBefore);
+        d.setPickupFrom(pickupFrom);
+        d.setPickupUntil(pickupUntil);
+        batch.add(d);
+        feed.add(new Activity(ActivityType.POSTED, t.donor(), d, posted));
+        if (expired) {
+            d.setStatus(Status.EXPIRED);
+            feed.add(new Activity(ActivityType.EXPIRED, t.donor(), d, bestBefore));
+            return;
+        }
+        d.setStatus(Status.DELIVERED);
+        d.setVolunteer(volunteer);
+        d.setNgo(ngo);
+        d.setClaimedAt(claimed);
+        d.setPickedUpAt(picked);
+        d.setDeliveredAt(delivered);
+        feed.add(new Activity(ActivityType.CLAIMED, volunteer, d, claimed));
+        feed.add(new Activity(ActivityType.PICKED_UP, volunteer, d, picked));
+        feed.add(new Activity(ActivityType.DELIVERED, volunteer, d, delivered));
     }
 
     private Donation donation(User donor, String title, Diet diet, Category category, int qty, Unit unit,
@@ -289,7 +338,7 @@ public class DataSeeder implements ApplicationRunner {
     }
 
     private <T> T weighted(List<T> items, double[] weights) {
-        double r = random.nextDouble();
+        double r = history.nextDouble();
         for (int i = 0; i < items.size() - 1; i++) {
             r -= weights[i];
             if (r < 0) {

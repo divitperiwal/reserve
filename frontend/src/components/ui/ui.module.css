@@ -139,6 +139,12 @@
   background: var(--fill);
   color: var(--ink-2);
 }
+.risk {
+  justify-self: start;
+}
+.phone {
+  justify-self: start;
+}
 .t-critical,
 .t-criticalSoft {
   background: var(--red-soft);
@@ -794,5 +800,39 @@ textarea.input {
   .toast {
     background: var(--ink);
     backdrop-filter: none;
+  }
+}
+
+/* Language switch */
+.lang {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: var(--r-pill);
+  color: var(--ink-2);
+  transition: background-color var(--d-state) var(--ease);
+}
+.lang select {
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--t-sm);
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+}
+.lang select:focus-visible {
+  outline: none;
+}
+.lang:has(select:focus-visible) {
+  box-shadow: var(--focus);
+}
+@media (hover: hover) {
+  .lang:hover {
+    background: var(--fill);
   }
 }

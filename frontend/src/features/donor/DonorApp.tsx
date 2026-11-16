@@ -2,6 +2,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CircleUserRound, House, List, Plus } from 'lucide-react';
 import { AppShell } from '../../components/shell/AppShell';
 import { useAuth } from '../../lib/auth';
+import { useT } from '../../lib/i18n';
 import { DonorDataProvider, useDonorData } from './DonorData';
 import { isLive } from './donorKit';
 import Home from './Home';
@@ -12,6 +13,7 @@ import Profile from './Profile';
 function Shell() {
   const { user } = useAuth();
   const { items } = useDonorData();
+  const t = useT();
   const posting = useLocation().pathname.startsWith('/donor/new');
   const live = items?.filter(isLive).length ?? 0;
   return (
@@ -19,12 +21,12 @@ function Shell() {
       home="/donor"
       hideTabs={posting}
       nav={[
-        { to: '/donor', label: 'Home', icon: House, end: true },
-        { to: '/donor/new', label: 'Post food', icon: Plus },
-        { to: '/donor/donations', label: 'Donations', icon: List, count: live },
-        { to: '/donor/profile', label: 'Profile', icon: CircleUserRound },
+        { to: '/donor', label: t('Home'), icon: House, end: true },
+        { to: '/donor/new', label: t('Post food'), icon: Plus },
+        { to: '/donor/donations', label: t('Donations'), icon: List, count: live },
+        { to: '/donor/profile', label: t('Profile'), icon: CircleUserRound },
       ]}
-      account={user ? { initials: user.initials, name: user.name, sub: user.orgType ?? 'Donor', to: '/donor/profile' } : undefined}
+      account={user ? { initials: user.initials, name: user.name, sub: t(user.orgType ?? 'Donor'), to: '/donor/profile' } : undefined}
     >
       <Routes>
         <Route index element={<Home />} />

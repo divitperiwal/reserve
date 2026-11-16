@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Hourglass, Minus, Plus, Utensils } from 'lucide-react';
-import { Button, DietMark, EmptyState, Sheet, Skeleton, useToast } from '../../components/ui';
+import { Button, DietMark, EmptyState, PhoneBadge, RiskBadge, Sheet, Skeleton, useToast } from '../../components/ui';
 import { FoodThumb, SectionHead } from '../../components/dash';
-import { api, ApiError } from '../../lib/api';
+import { api, ApiError, shownError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
-import { haversineKm, km, unitLabel } from '../../lib/format';
+import { haversineKm, km, qty, unitName } from '../../lib/format';
+import { useT, type T } from '../../lib/i18n';
 import { useStream } from '../../lib/stream';
-import { shortLeft, timeOfDay, useNow } from '../../lib/time';
+import { timeOfDay, useNow } from '../../lib/time';
 import type { Donation } from '../../lib/types';
+import { span } from '../tracking/geo';
 import { useDeliveries, useWaiting } from './useDeliveries';
 import s from './available.module.css';
 
@@ -52,35 +54,39 @@ function useAvailable() {
   return { items, loading, error, reload };
 }
 
-const closesIn = (iso: string, now: number) =>
-  +new Date(iso) <= now ? 'Pickup window closed' : `Pickup closes in ${shortLeft(+new Date(iso) - now).replace(' left', '')}`;
+function closesIn(iso: string, now: number, t: T) {
+  const ms = +new Date(iso) - now;
+  if (ms <= 0) return t('Pickup window closed');
+  return ms < 60_000 ? t('Pickup closes in less than a minute') : t('Pickup closes in {time}', { time: span(ms, t) });
+}
 
-const unitText = (n: number, u: Donation['unit']) => (n === 1 && u !== 'KG' ? unitLabel[u].replace(/s$/, '') : unitLabel[u]);
-const qty = (d: Pick<Donation, 'quantity' | 'unit'>) => `${d.quantity} ${unitText(d.quantity, d.unit)}`;
+const where = (d: Donation, t: T) => (d.distanceKm !== undefined ? t('{address}, {km} away', { address: d.donor.name, km: km(d.distanceKm) }) : d.donor.name);
 
 export function AvailablePanel() {
   const { user } = useAuth();
   const { items, loading, error, reload } = useAvailable();
   const now = useNow();
   const [pickedId, setPickedId] = useState<number | null>(null);
+  const t = useT();
   const accepting = user?.acceptingFood ?? true;
+  const kitchen = useMemo(() => (user?.lat && user?.lng ? { lat: user.lat, lng: user.lng } : null), [user?.lat, user?.lng]);
   const list = items
     .filter((d) => +new Date(d.pickupUntil) > now)
     .sort((a, b) => +new Date(a.pickupUntil) - +new Date(b.pickupUntil));
 
   return (
     <section className={s.block}>
-      <SectionHead title="Available food" count={list.length} />
+      <SectionHead title={t('Available food')} count={list.length} />
       {loading && !items.length ? (
         <Skeleton h={120} r={18} />
       ) : error && !items.length ? (
-        <EmptyState icon={Utensils} title="Couldn’t load available food" action={<Button variant="secondary" onClick={reload}>Try again</Button>}>
-          {error}
+        <EmptyState icon={Utensils} title={t('Couldn’t load available food')} action={<Button variant="secondary" onClick={reload}>{t('Try again')}</Button>}>
+          {shownError(error, t)}
         </EmptyState>
       ) : list.length === 0 ? (
         <div className={s.empty}>
           <Utensils size={22} strokeWidth={1.75} aria-hidden />
-          <span>No food is waiting right now. New posts show up here.</span>
+          <span>{t('No food is waiting right now. New posts show up here.')}</span>
         </div>
       ) : (
         <ul className={s.list}>
@@ -89,24 +95,24 @@ export function AvailablePanel() {
               <FoodThumb d={d} size={72} />
               <span className={s.text}>
                 <strong>{d.title}</strong>
+                <span>{where(d, t)}</span>
                 <span>
-                  {d.donor.name}
-                  {d.distanceKm !== undefined && `, ${km(d.distanceKm)} away`}
-                </span>
-                <span>
-                  {qty(d)}, {d.meals} meals
+                  {t('{qty}, {meals} meals', { qty: qty(d, t), meals: d.meals })}
                   <span className={s.diet}>
                     <DietMark diet={d.diet} />
-                    {d.diet === 'VEG' ? 'Veg' : 'Non-veg'}
+                    {d.diet === 'VEG' ? t('Veg') : t('Non-veg')}
                   </span>
                 </span>
                 <span className={s.meta}>
-                  {closesIn(d.pickupUntil, now)}, best before {timeOfDay(d.bestBefore, now)}
+                  {t('{closes}, best before {time}', { closes: closesIn(d.pickupUntil, now, t), time: timeOfDay(d.bestBefore, t, now) })}
+                </span>
+                <span>
+                  <RiskBadge d={d} kitchen={kitchen} /> <PhoneBadge d={d} />
                 </span>
               </span>
               {accepting && (
                 <Button size="sm" onClick={() => setPickedId(d.id)}>
-                  Accept
+                  {t('Accept')}
                 </Button>
               )}
             </li>
@@ -124,6 +130,7 @@ function AcceptSheet({ id, food, onClose, onDone }: { id: number | null; food: D
   const [raw, setRaw] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useT();
   const max = food?.quantity ?? 1;
 
   useEffect(() => {
@@ -141,7 +148,7 @@ function AcceptSheet({ id, food, onClose, onDone }: { id: number | null; food: D
   const valid = raw !== '' && Number.isInteger(n) && n >= 1 && n <= max;
   const meals = food && valid ? Math.max(1, Math.round((food.meals * n) / food.quantity)) : 0;
   const step = (by: number) => setRaw(String(Math.min(max, Math.max(1, (valid ? n : max) + by))));
-  const unit = food ? unitText(valid ? n : max, food.unit) : '';
+  const unit = food ? unitName(food.unit, t, valid ? n : max) : '';
   const fixRaw = () => {
     const v = Math.round(Number(raw));
     setRaw(String(raw === '' || Number.isNaN(v) ? max : Math.min(max, Math.max(1, v))));
@@ -154,7 +161,7 @@ function AcceptSheet({ id, food, onClose, onDone }: { id: number | null; food: D
     try {
       const got = await api.accept(food.id, n);
       upsert(got);
-      toast(`Accepted ${n} ${unit} of ${food.title}`);
+      toast(t('Accepted {qty} of {title}', { qty: `${n} ${unit}`, title: food.title }));
       onDone();
       onClose();
     } catch (e) {
@@ -168,55 +175,50 @@ function AcceptSheet({ id, food, onClose, onDone }: { id: number | null; food: D
     <Sheet
       open={id !== null}
       onClose={onClose}
-      title="Accept food"
+      title={t('Accept food')}
       footer={
         food ? (
           <Button block loading={busy} disabled={!valid} onClick={confirm}>
-            {valid ? `Accept ${n} ${unit}` : 'Accept'}
+            {valid ? t('Accept {qty}', { qty: `${n} ${unit}` }) : t('Accept')}
           </Button>
         ) : (
           <Button block variant="secondary" onClick={onClose}>
-            Close
+            {t('Close')}
           </Button>
         )
       }
     >
-      {!food && <p className={s.sheetText}>This food is no longer available.</p>}
+      {!food && <p className={s.sheetText}>{t('This food is no longer available.')}</p>}
       {food && (
         <div className={s.sheet}>
           <div className={s.summary}>
             <FoodThumb d={food} size={64} />
             <span className={s.text}>
               <strong>{food.title}</strong>
-              <span>
-                {food.donor.name}
-                {food.distanceKm !== undefined && `, ${km(food.distanceKm)} away`}
-              </span>
-              <span>
-                {qty(food)} available, {food.meals} meals
-              </span>
+              <span>{where(food, t)}</span>
+              <span>{t('{qty} available, {meals} meals', { qty: qty(food, t), meals: food.meals })}</span>
             </span>
           </div>
           <div className={s.amount}>
-            <label htmlFor="accept-qty">How much do you need?</label>
+            <label htmlFor="accept-qty">{t('How much do you need?')}</label>
             <div className={s.stepper}>
-              <button type="button" aria-label="Less" onClick={() => step(-1)} disabled={valid && n <= 1}>
+              <button type="button" aria-label={t('Less')} onClick={() => step(-1)} disabled={valid && n <= 1}>
                 <Minus size={16} strokeWidth={2.25} aria-hidden />
               </button>
               <input id="accept-qty" type="number" inputMode="numeric" min={1} max={max} value={raw} onChange={(e) => setRaw(e.target.value)} onBlur={fixRaw} />
-              <button type="button" aria-label="More" onClick={() => step(1)} disabled={valid && n >= max}>
+              <button type="button" aria-label={t('More')} onClick={() => step(1)} disabled={valid && n >= max}>
                 <Plus size={16} strokeWidth={2.25} aria-hidden />
               </button>
               <span className={s.unit}>{unit}</span>
               <button type="button" className={s.all} onClick={() => setRaw(String(max))}>
-                Take all
+                {t('Take all')}
               </button>
             </div>
-            <p className={s.gives}>{valid ? `That gives ${meals} meals.` : `Enter a number from 1 to ${max}.`}</p>
+            <p className={s.gives}>{valid ? t('That gives {n} meals.', { n: meals }) : t('Enter a number from 1 to {max}.', { max })}</p>
           </div>
           {error && (
             <p className={s.error} role="alert">
-              {error}
+              {shownError(error, t)}
             </p>
           )}
         </div>
@@ -235,6 +237,7 @@ export function WaitingPanel() {
   const giving = list.find((d) => d.id === givingId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useT();
 
   const open = (d: Donation) => {
     setError(null);
@@ -248,7 +251,7 @@ export function WaitingPanel() {
     try {
       await api.withdraw(giving.id);
       remove(giving.id);
-      toast(`${giving.title} given back`);
+      toast(t('{title} given back', { title: giving.title }));
       setGivingId(null);
     } catch (e) {
       setError((e as Error).message);
@@ -260,7 +263,7 @@ export function WaitingPanel() {
   if (!list.length) return null;
   return (
     <section className={s.block}>
-      <SectionHead title="Waiting for a volunteer" count={list.length} />
+      <SectionHead title={t('Waiting for a volunteer')} count={list.length} />
       <ul className={s.list}>
         {list.map((d) => (
           <li key={d.id} className={s.row}>
@@ -268,14 +271,14 @@ export function WaitingPanel() {
             <span className={s.text}>
               <strong>{d.title}</strong>
               <span>
-                {qty(d)}, {d.meals} meals, from {d.donor.name}
+                {t('{qty}, {meals} meals, from {donor}', { qty: qty(d, t), meals: d.meals, donor: d.donor.name })}
               </span>
               <span className={s.meta}>
-                <Hourglass size={13} strokeWidth={2} aria-hidden /> {closesIn(d.pickupUntil, now)}
+                <Hourglass size={13} strokeWidth={2} aria-hidden /> {closesIn(d.pickupUntil, now, t)}
               </span>
             </span>
             <Button size="sm" variant="secondary" onClick={() => open(d)}>
-              Give back
+              {t('Give back')}
             </Button>
           </li>
         ))}
@@ -283,19 +286,19 @@ export function WaitingPanel() {
       <Sheet
         open={!!giving}
         onClose={() => setGivingId(null)}
-        title="Give this food back?"
+        title={t('Give this food back?')}
         footer={
           <Button block variant="secondary" loading={busy} onClick={giveBack}>
-            Give back
+            {t('Give back')}
           </Button>
         }
       >
         <p className={s.sheetText}>
-          {giving?.title} goes back to Available food so another kitchen can take it.
+          {t('{title} goes back to Available food so another kitchen can take it.', { title: giving?.title ?? '' })}
         </p>
         {error && (
           <p className={s.error} role="alert">
-            {error}
+            {shownError(error, t)}
           </p>
         )}
       </Sheet>

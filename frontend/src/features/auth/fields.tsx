@@ -1,6 +1,7 @@
 import { useState, type InputHTMLAttributes, type ReactNode } from 'react';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { cx, errorClass, labelClass } from '../../components/ui';
+import { useT } from '../../lib/i18n';
 import { digits } from './authUtils';
 import s from './AuthPage.module.css';
 
@@ -35,15 +36,16 @@ const describedBy = (id: string, error?: string, hint?: ReactNode) => (error ? `
 
 export function PhoneField({
   id,
-  label = 'Mobile number',
+  label,
   value,
   onChange,
   onBlur,
   error,
   hint,
 }: Omit<BaseProps, 'label'> & { label?: string; value: string; onChange: (v: string) => void; onBlur?: () => void }) {
+  const t = useT();
   return (
-    <Shell id={id} label={label} error={error} hint={hint}>
+    <Shell id={id} label={label ?? t('Mobile number')} error={error} hint={hint}>
       <div className={cx(s.control, !!error && s.invalid)}>
         <span className={s.prefix} aria-hidden>
           +91
@@ -69,14 +71,15 @@ export function PhoneField({
 
 export function PasswordField({
   id,
-  label = 'Password',
+  label,
   error,
   hint,
   ...rest
 }: Omit<BaseProps, 'label'> & { label?: string } & Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'type'>) {
+  const t = useT();
   const [shown, setShown] = useState(false);
   return (
-    <Shell id={id} label={label} error={error} hint={hint}>
+    <Shell id={id} label={label ?? t('Password')} error={error} hint={hint}>
       <div className={cx(s.control, !!error && s.invalid)}>
         <input
           id={id}
@@ -86,7 +89,7 @@ export function PasswordField({
           aria-describedby={describedBy(id, error, hint)}
           {...rest}
         />
-        <button type="button" className={s.reveal} onClick={() => setShown((v) => !v)} aria-label={shown ? 'Hide password' : 'Show password'}>
+        <button type="button" className={s.reveal} onClick={() => setShown((v) => !v)} aria-label={t(shown ? 'Hide password' : 'Show password')}>
           {shown ? <EyeOff size={18} strokeWidth={1.75} /> : <Eye size={18} strokeWidth={1.75} />}
         </button>
       </div>

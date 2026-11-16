@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useToast } from '../../components/ui';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
+import { useT } from '../../lib/i18n';
 import { VolunteerContext, type VolunteerState } from './context';
 import { useActivePickupState } from './hooks';
 import { Shell } from './Shell';
@@ -16,6 +17,7 @@ const ActivePickupPage = lazy(() => import('./ActivePickupPage'));
 export default function VolunteerApp() {
   const { user, setUser } = useAuth();
   const toast = useToast();
+  const t = useT();
   const { active, setActive, loaded } = useActivePickupState(user!.id);
   const [skipped, setSkipped] = useState<number[]>([]);
 
@@ -25,27 +27,27 @@ export default function VolunteerApp() {
       setUser({ ...prev, onDuty: on });
       try {
         setUser(await api.updateMe({ onDuty: on }));
-        toast(on ? 'You’re online' : 'You’re offline');
+        toast(on ? t('You’re online') : t('You’re offline'));
       } catch (e) {
         setUser(prev);
         toast((e as Error).message, { error: true });
       }
     },
-    [user, setUser, toast],
+    [user, setUser, toast, t],
   );
 
   const updateProfile = useCallback(
     async (patch: { name?: string; vehicle?: string }) => {
       try {
         setUser(await api.updateMe(patch));
-        toast('Saved');
+        toast(t('Saved'));
         return true;
       } catch (e) {
         toast((e as Error).message, { error: true });
         return false;
       }
     },
-    [setUser, toast],
+    [setUser, toast, t],
   );
 
   const value = useMemo<VolunteerState | null>(

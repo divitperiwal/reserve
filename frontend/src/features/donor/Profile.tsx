@@ -1,50 +1,49 @@
 import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
-import { Avatar, Badge, Button } from '../../components/ui';
+import { Avatar, Badge, Button, LanguageSwitch, useToast } from '../../components/ui';
 import { Columns, Page, Panel, Topbar } from '../../components/dash';
 import { useAuth } from '../../lib/auth';
-import { num } from '../../lib/format';
-import { useDonorData } from './DonorData';
-import { co2For, kgLabel } from './donorKit';
+import { usePushSetting } from '../../lib/push';
+import { useT } from '../../lib/i18n';
+import { ImpactCard } from '../impact/ImpactCard';
+import { NotificationsRow } from '../push/NotificationsRow';
 import s from './pages.module.css';
 
 export default function Profile() {
   const { user, signOut } = useAuth();
-  const { items } = useDonorData();
   const navigate = useNavigate();
+  const toast = useToast();
+  const t = useT();
+  const push = usePushSetting((m) => toast(m, { error: true }));
   if (!user) return null;
-
-  const delivered = (items ?? []).filter((d) => d.status === 'DELIVERED');
-  const meals = delivered.reduce((a, d) => a + d.meals, 0);
-  const kg = delivered.reduce((a, d) => a + d.weightKg, 0);
 
   return (
     <Page>
-      <Topbar title={user.name} subtitle={user.orgType ?? 'Donor'} />
+      <Topbar title={user.name} subtitle={t(user.orgType ?? 'Donor')} />
 
       <Columns
         main={
-          <Panel title="Organisation details" flush>
+          <Panel title={t('Organisation details')} flush>
             <div className={s.identity}>
               <Avatar initials={user.initials} size={56} tone="basil" />
               <span>
                 <strong>{user.name}</strong>
-                <em>{user.orgType ?? 'Donor'}</em>
+                <em>{t(user.orgType ?? 'Donor')}</em>
               </span>
             </div>
             <dl className={s.details}>
               <div>
-                <dt>Mobile</dt>
+                <dt>{t('Mobile')}</dt>
                 <dd>+91 {user.phone}</dd>
               </div>
               <div>
-                <dt>Pickup address</dt>
+                <dt>{t('Pickup address')}</dt>
                 <dd>{user.address}</dd>
               </div>
               <div>
-                <dt>Verified</dt>
+                <dt>{t('Verified')}</dt>
                 <dd>
-                  <Badge tone={user.verified ? 'fresh' : 'soon'}>{user.verified ? 'Yes' : 'Pending'}</Badge>
+                  <Badge tone={user.verified ? 'fresh' : 'soon'}>{t(user.verified ? 'Yes' : 'Pending')}</Badge>
                 </dd>
               </div>
             </dl>
@@ -52,29 +51,18 @@ export default function Profile() {
         }
         side={
           <>
-            <Panel title="Your impact">
-              <dl className={s.impact}>
-                <div>
-                  <dt>Meals shared</dt>
-                  <dd>{items ? num(meals) : '–'}</dd>
-                </div>
-                <div>
-                  <dt>Deliveries</dt>
-                  <dd>{items ? num(delivered.length) : '–'}</dd>
-                </div>
-                <div>
-                  <dt>Food saved</dt>
-                  <dd>{items ? kgLabel(kg) : '–'}</dd>
-                </div>
-                <div>
-                  <dt>CO₂e avoided</dt>
-                  <dd>{items ? kgLabel(co2For(kg)) : '–'}</dd>
-                </div>
-              </dl>
+            <ImpactCard mealsLabel={t('Meals shared')} />
+            <Panel title={t('Language')}>
+              <LanguageSwitch block />
             </Panel>
-            <Panel title="Account">
+            {push && (
+              <Panel title={t('Notifications')} flush>
+                <NotificationsRow push={push} subtitle={t('Alerts on this device')} />
+              </Panel>
+            )}
+            <Panel title={t('Account')}>
               <div className={s.account}>
-                <p>Signed in as {user.name}.</p>
+                <p>{t('Signed in as {name}.', { name: user.name })}</p>
                 <Button
                   variant="danger"
                   block
@@ -84,7 +72,7 @@ export default function Profile() {
                     navigate('/', { replace: true });
                   }}
                 >
-                  Sign out
+                  {t('Sign out')}
                 </Button>
               </div>
             </Panel>

@@ -3,8 +3,10 @@ package com.reserve.stats;
 import com.reserve.auth.AuthUser;
 import com.reserve.common.ApiException;
 import com.reserve.stats.StatsDtos.DashboardStats;
+import com.reserve.stats.StatsDtos.Leaderboard;
 import com.reserve.stats.StatsDtos.MyStats;
 import com.reserve.stats.StatsDtos.PublicStats;
+import com.reserve.stats.StatsDtos.SurplusMap;
 import java.util.Map;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -38,6 +40,16 @@ public class StatsController {
         return stats.dashboard(checkDays(days));
     }
 
+    @GetMapping("/api/stats/leaderboard")
+    public Leaderboard leaderboard(@RequestParam(defaultValue = "30") int days) {
+        return stats.leaderboard(checkRange(days, 1, 90));
+    }
+
+    @GetMapping("/api/stats/surplus")
+    public SurplusMap surplus(@RequestParam(defaultValue = "56") int days) {
+        return stats.surplus(checkRange(days, 7, 90));
+    }
+
     @GetMapping("/api/export.csv")
     public ResponseEntity<String> export(@RequestParam(defaultValue = "7") int days) {
         String csv = stats.exportCsv(checkDays(days));
@@ -45,6 +57,14 @@ public class StatsController {
                 .contentType(new MediaType("text", "csv"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"reserve-donations-" + days + "d.csv\"")
                 .body(csv);
+    }
+
+    private static int checkRange(int days, int min, int max) {
+        if (days < min || days > max) {
+            throw ApiException.badRequest("Days must be between " + min + " and " + max,
+                    Map.of("days", "Use " + min + " to " + max));
+        }
+        return days;
     }
 
     private static int checkDays(int days) {

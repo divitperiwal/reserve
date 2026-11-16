@@ -222,3 +222,49 @@
   color: var(--ink-2);
   font-size: var(--t-sm);
 }
+
+/* Expected surplus */
+.forecast {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.forecast li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-5);
+}
+.forecast li + li {
+  border-top: 1px solid var(--line);
+}
+.forecastText {
+  display: grid;
+  min-width: 0;
+}
+.forecastText strong {
+  font-weight: 560;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.forecastText span,
+.forecastText em {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  font-style: normal;
+}
+.forecastMeals {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: var(--basil-soft);
+  color: var(--basil-ink);
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+.forecastMeals strong {
+  font-size: var(--t-md);
+  font-weight: 700;
+}

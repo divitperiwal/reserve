@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Bike, Map as MapIcon } from 'lucide-react';
 import { Badge, Button, ButtonLink, EmptyState, Segmented, Skeleton } from '../../components/ui';
 import { Columns, FoodThumb, Page, Panel, SectionHead, Topbar } from '../../components/dash';
+import { shownError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { num, qty } from '../../lib/format';
+import { useT, type T } from '../../lib/i18n';
 import { useStreamStatus } from '../../lib/stream';
 import { timeOfDay } from '../../lib/time';
 import type { Donation } from '../../lib/types';
@@ -11,7 +13,7 @@ import { Arrival } from './Arrival';
 import { ConfirmSheet } from './ConfirmSheet';
 import { etaMinutes, useDeliveries, useOnTheWay } from './useDeliveries';
 import s from './deliveries.module.css';
-import t from './today.module.css';
+import c from './today.module.css';
 
 type Filter = 'incoming' | 'received' | 'all';
 
@@ -22,6 +24,7 @@ const isLate = (d: Donation) => !!d.deliveredAt && +new Date(d.deliveredAt) > +n
 
 export function Deliveries() {
   const { user } = useAuth();
+  const t = useT();
   const live = useStreamStatus();
   const { items } = useDeliveries();
   const { list: incoming, loading, error, reload } = useOnTheWay();
@@ -37,44 +40,44 @@ export function Deliveries() {
   const shown: Filter = filter ?? 'all';
 
   const arriving = incoming.length ? (
-    <div className={t.arriving}>
+    <div className={c.arriving}>
       {incoming.map((d) => (
         <Arrival key={d.id} d={d} eta={etaMinutes(d, kitchen)} onConfirm={() => setConfirming(d)} />
       ))}
     </div>
   ) : (
-    <div className={t.empty}>
+    <div className={c.empty}>
       <Bike size={22} strokeWidth={1.75} aria-hidden />
-      <span>Nothing is on the way. When a volunteer claims food for your kitchen, it shows up here.</span>
+      <span>{t('Nothing is on the way. When a volunteer claims food for your kitchen, it shows up here.')}</span>
     </div>
   );
 
   return (
     <Page>
       <Topbar
-        title="Deliveries"
+        title={t('Deliveries')}
         subtitle={
           <>
-            <span className={t.dot} data-on={live || undefined} aria-hidden />
-            {live ? 'Live' : 'Connecting'}
+            <span className={c.dot} data-on={live || undefined} aria-hidden />
+            {live ? t('Live') : t('Connecting')}
           </>
         }
         actions={
           <ButtonLink to="/ngo/map" variant="secondary" size="sm" icon={<MapIcon size={16} strokeWidth={2} aria-hidden />}>
-            Live map
+            {t('Live map')}
           </ButtonLink>
         }
       />
 
       <div className={s.filters}>
         <Segmented
-          label="Show"
+          label={t('Show')}
           value={shown}
           onChange={setFilter}
           options={[
-            { value: 'all', label: 'All' },
-            { value: 'incoming', label: `Incoming${incoming.length ? ` ${incoming.length}` : ''}` },
-            { value: 'received', label: 'Received' },
+            { value: 'all', label: t('All') },
+            { value: 'incoming', label: incoming.length ? t('Incoming {n}', { n: incoming.length }) : t('Incoming') },
+            { value: 'received', label: t('Received') },
           ]}
         />
       </div>
@@ -84,24 +87,24 @@ export function Deliveries() {
           loading && !items.length ? (
             <Skeleton h={160} r={18} />
           ) : error && !items.length ? (
-            <EmptyState icon={Bike} title="Couldn’t load deliveries" action={<Button variant="secondary" onClick={reload}>Try again</Button>}>
-              {error}
+            <EmptyState icon={Bike} title={t('Couldn’t load deliveries')} action={<Button variant="secondary" onClick={reload}>{t('Try again')}</Button>}>
+              {shownError(error, t)}
             </EmptyState>
           ) : (
             <>
               {shown !== 'received' && (
                 <section className={s.block}>
-                  {shown === 'all' && <SectionHead title="Incoming" count={incoming.length} />}
+                  {shown === 'all' && <SectionHead title={t('Incoming')} count={incoming.length} />}
                   {arriving}
                 </section>
               )}
               {shown !== 'incoming' && (
-                <Panel title="Received" action={<span className={s.count}>{received.length}</span>} flush>
-                  <ReceivedTable items={received.slice(0, limit)} />
+                <Panel title={t('Received')} action={<span className={s.count}>{received.length}</span>} flush>
+                  <ReceivedTable items={received.slice(0, limit)} t={t} />
                   {received.length > limit && (
                     <div className={s.more}>
                       <Button variant="secondary" size="sm" onClick={() => setLimit((n) => n + PAGE)}>
-                        Show more
+                        {t('Show more')}
                       </Button>
                     </div>
                   )}
@@ -111,22 +114,22 @@ export function Deliveries() {
           )
         }
         side={
-          <Panel title="This week">
+          <Panel title={t('This week')}>
             <dl className={s.impact}>
               <div>
-                <dt>Received</dt>
+                <dt>{t('Received')}</dt>
                 <dd>{num(week.length)}</dd>
               </div>
               <div>
-                <dt>Meals</dt>
+                <dt>{t('Meals')}</dt>
                 <dd>{num(weekMeals)}</dd>
               </div>
               <div>
-                <dt>On the way</dt>
+                <dt>{t('On the way')}</dt>
                 <dd>{num(incoming.length)}</dd>
               </div>
               <div>
-                <dt>Past best-before</dt>
+                <dt>{t('Past best-before')}</dt>
                 <dd>{num(weekLate)}</dd>
               </div>
             </dl>
@@ -139,17 +142,17 @@ export function Deliveries() {
 }
 
 // Delivered history as a table on tablets and up, compact rows on phones
-function ReceivedTable({ items }: { items: Donation[] }) {
-  if (!items.length) return <p className={s.quiet}>Food delivered to your kitchen shows up here.</p>;
+function ReceivedTable({ items, t }: { items: Donation[]; t: T }) {
+  if (!items.length) return <p className={s.quiet}>{t('Food delivered to your kitchen shows up here.')}</p>;
   return (
-    <div className={s.table} role="table" aria-label="Received deliveries">
+    <div className={s.table} role="table" aria-label={t('Received deliveries')}>
       <div className={s.thead} role="row">
-        <span role="columnheader">Food</span>
-        <span role="columnheader">Donor</span>
-        <span role="columnheader">Volunteer</span>
-        <span role="columnheader">Meals</span>
-        <span role="columnheader">Received</span>
-        <span role="columnheader">Timing</span>
+        <span role="columnheader">{t('Food')}</span>
+        <span role="columnheader">{t('Donor')}</span>
+        <span role="columnheader">{t('Volunteer')}</span>
+        <span role="columnheader">{t('Meals')}</span>
+        <span role="columnheader">{t('Received')}</span>
+        <span role="columnheader">{t('Timing')}</span>
       </div>
       {items.map((d) => (
         <div key={d.id} className={s.tr} role="row">
@@ -158,8 +161,8 @@ function ReceivedTable({ items }: { items: Donation[] }) {
             <span>
               <strong>{d.title}</strong>
               <em>
-                {qty(d)}
-                <span className={s.phoneOnly}>, from {d.donor.name}</span>
+                {qty(d, t)}
+                <span className={s.phoneOnly}>{t(', from {donor}', { donor: d.donor.name })}</span>
               </em>
             </span>
           </span>
@@ -173,10 +176,10 @@ function ReceivedTable({ items }: { items: Donation[] }) {
             {num(d.meals)}
           </span>
           <span role="cell" className={s.cellMuted}>
-            {d.deliveredAt ? timeOfDay(d.deliveredAt) : '–'}
+            {d.deliveredAt ? timeOfDay(d.deliveredAt, t) : '–'}
           </span>
           <span role="cell" className={s.timing}>
-            <Badge tone={isLate(d) ? 'critical' : 'fresh'}>{isLate(d) ? 'Late' : 'On time'}</Badge>
+            <Badge tone={isLate(d) ? 'critical' : 'fresh'}>{isLate(d) ? t('Late') : t('On time')}</Badge>
           </span>
         </div>
       ))}

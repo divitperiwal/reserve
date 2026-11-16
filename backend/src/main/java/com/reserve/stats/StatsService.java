@@ -4,13 +4,19 @@ import com.reserve.auth.AuthUser;
 import com.reserve.donation.Donation;
 import com.reserve.donation.DonationRepository;
 import com.reserve.donation.Status;
+import com.reserve.stats.StatsDtos.AllTime;
 import com.reserve.stats.StatsDtos.CategoryShare;
 import com.reserve.stats.StatsDtos.DashboardStats;
 import com.reserve.stats.StatsDtos.DayMeals;
 import com.reserve.stats.StatsDtos.Funnel;
+import com.reserve.stats.StatsDtos.LeaderDonor;
+import com.reserve.stats.StatsDtos.LeaderVolunteer;
+import com.reserve.stats.StatsDtos.Leaderboard;
 import com.reserve.stats.StatsDtos.MyStats;
 import com.reserve.stats.StatsDtos.NextBadge;
 import com.reserve.stats.StatsDtos.PublicStats;
+import com.reserve.stats.StatsDtos.SurplusMap;
+import com.reserve.stats.StatsDtos.SurplusPoint;
 import com.reserve.stats.StatsDtos.TopVolunteer;
 import com.reserve.user.Role;
 import com.reserve.user.User;
@@ -67,20 +73,21 @@ public class StatsService {
         OffsetDateTime monthStart = LocalDate.now(zone).withDayOfMonth(1).atStartOfDay(zone).toOffsetDateTime();
         String monthLabel = monthStart.atZoneSameInstant(zone).getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
         List<Donation> pickedThisMonth = donations.findByPickedUpAtAfter(monthStart);
+        AllTime allTime = allTime(me);
         return switch (me.role()) {
-            case VOLUNTEER -> volunteerStats(me.id(), monthLabel, pickedThisMonth);
+            case VOLUNTEER -> volunteerStats(me.id(), monthLabel, pickedThisMonth, allTime);
             case DONOR -> {
                 List<Donation> mine = donations.findByDonorIdAndCreatedAtAfter(me.id(), monthStart.minusDays(2));
                 List<Donation> deliveredThisMonth = mine.stream().filter(deliveredSince(monthStart)).toList();
                 int posted = (int) mine.stream().filter(d -> !d.getCreatedAt().isBefore(monthStart)).count();
                 int pickups = (int) pickedThisMonth.stream().filter(d -> d.getDonor().getId().equals(me.id())).count();
                 long live = donations.countByDonorIdAndStatusIn(me.id(), EnumSet.of(Status.AVAILABLE, Status.ACCEPTED, Status.CLAIMED, Status.PICKED_UP));
-                yield new MyStats(monthLabel, pickups, meals(deliveredThisMonth), null, posted, live, null);
+                yield new MyStats(monthLabel, pickups, meals(deliveredThisMonth), null, posted, live, null, allTime, List.of());
             }
             case NGO -> {
                 List<Donation> received = pickedThisMonth.stream()
                         .filter(d -> d.getNgo().getId().equals(me.id())).filter(deliveredSince(monthStart)).toList();
-                yield new MyStats(monthLabel, received.size(), meals(received), null, null, null, null);
+                yield new MyStats(monthLabel, received.size(), meals(received), null, null, null, null, allTime, List.of());
             }
         };
     }
@@ -138,7 +145,55 @@ public class StatsService {
                 .sorted(Comparator.comparing(Donation::getCreatedAt)).toList());
     }
 
-    private MyStats volunteerStats(Long me, String monthLabel, List<Donation> pickedThisMonth) {
+    @Transactional(readOnly = true)
+    public Leaderboard leaderboard(int days) {
+        OffsetDateTime start = LocalDate.now(zone).minusDays(days - 1L).atStartOfDay(zone).toOffsetDateTime();
+        List<Donation> delivered = donations.findDeliveredSince(start);
+        List<LeaderVolunteer> volunteers = delivered.stream().collect(Collectors.groupingBy(Donation::getVolunteer)).entrySet().stream()
+                .map(e -> new LeaderVolunteer(e.getKey().getId(), e.getKey().getName(), e.getKey().initials(),
+                        e.getValue().size(), meals(e.getValue()), highestBadge(e.getValue().size())))
+                .sorted(Comparator.comparingInt(LeaderVolunteer::meals).reversed().thenComparing(LeaderVolunteer::id))
+                .limit(10).toList();
+        List<LeaderDonor> donorList = delivered.stream().collect(Collectors.groupingBy(Donation::getDonor)).entrySet().stream()
+                .map(e -> new LeaderDonor(e.getKey().getId(), e.getKey().getName(), e.getKey().initials(),
+                        e.getValue().size(), meals(e.getValue())))
+                .sorted(Comparator.comparingInt(LeaderDonor::meals).reversed().thenComparing(LeaderDonor::id))
+                .limit(10).toList();
+        double kg = kg(delivered);
+        return new Leaderboard(days, meals(delivered), round1(kg), round1(kg * CO2_PER_KG), volunteers, donorList);
+    }
+
+    @Transactional(readOnly = true)
+    public SurplusMap surplus(int days) {
+        OffsetDateTime start = LocalDate.now(zone).minusDays(days - 1L).atStartOfDay(zone).toOffsetDateTime();
+        List<Donation> period = donations.findByStatusInAndCreatedAtAfter(EnumSet.of(Status.DELIVERED, Status.EXPIRED), start);
+        List<SurplusPoint> points = period.stream()
+                .collect(Collectors.groupingBy(d -> List.of(d.getStatus(), round3(d.getLat()), round3(d.getLng()))))
+                .values().stream()
+                .map(g -> new SurplusPoint(round3(g.get(0).getLat()), round3(g.get(0).getLng()), round1(kg(g)), g.get(0).getStatus()))
+                .sorted(Comparator.comparingDouble(SurplusPoint::kg).reversed())
+                .toList();
+        OffsetDateTime now = OffsetDateTime.now();
+        List<Donation> history = donations.findForForecast(now.minusWeeks(SurplusForecast.WEEKS_LOOKED));
+        return new SurplusMap(days, points, SurplusForecast.forecast(history, now, zone));
+    }
+
+    private AllTime allTime(AuthUser me) {
+        List<Donation> delivered = switch (me.role()) {
+            case VOLUNTEER -> donations.findByVolunteerIdAndStatus(me.id(), Status.DELIVERED);
+            case DONOR -> donations.findByDonorIdAndStatus(me.id(), Status.DELIVERED);
+            case NGO -> donations.findByNgoIdAndStatus(me.id(), Status.DELIVERED);
+        };
+        double kg = kg(delivered);
+        return new AllTime(delivered.size(), meals(delivered), round1(kg), round1(kg * CO2_PER_KG),
+                users.findById(me.id()).orElseThrow().getCreatedAt());
+    }
+
+    private static String highestBadge(int pickups) {
+        return BADGES.stream().filter(b -> b.target() <= pickups).reduce((a, b) -> b).map(NextBadge::name).orElse(null);
+    }
+
+    private MyStats volunteerStats(Long me, String monthLabel, List<Donation> pickedThisMonth, AllTime allTime) {
         Map<Long, Integer> mealsByVolunteer = pickedThisMonth.stream()
                 .collect(Collectors.groupingBy(d -> d.getVolunteer().getId(), Collectors.summingInt(Donation::meals)));
         int pickups = (int) pickedThisMonth.stream().filter(d -> d.getVolunteer().getId().equals(me)).count();
@@ -146,7 +201,8 @@ public class StatsService {
         int rank = 1 + (int) mealsByVolunteer.values().stream().filter(m -> m > meals).count();
         NextBadge next = BADGES.stream().filter(b -> pickups < b.target()).findFirst()
                 .map(b -> new NextBadge(b.name(), pickups, b.target())).orElse(null);
-        return new MyStats(monthLabel, pickups, meals, rank, null, null, next);
+        List<String> earned = BADGES.stream().filter(b -> b.target() <= pickups).map(NextBadge::name).toList();
+        return new MyStats(monthLabel, pickups, meals, rank, null, null, next, allTime, earned);
     }
 
     private static List<TopVolunteer> topVolunteers(List<Donation> delivered) {
@@ -198,6 +254,10 @@ public class StatsService {
         }
         long onTime = delivered.stream().filter(d -> !d.getDeliveredAt().isAfter(d.getBestBefore())).count();
         return Math.round(onTime * 100f / delivered.size());
+    }
+
+    private static double round3(double v) {
+        return Math.round(v * 1000) / 1000.0;
     }
 
     static double round1(double v) {

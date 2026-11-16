@@ -5,7 +5,7 @@ Food-donation coordinator. Donors post surplus food, an NGO kitchen accepts what
 ## Stack
 
 - `backend/`: Java 21, Spring Boot 3.3, Maven, Spring Web, Spring Data JPA, Spring Security (stateless JWT via jjwt 0.12), Flyway, PostgreSQL, Bean Validation. Port **8080**.
-- `frontend/`: React 19 + TypeScript + Vite, react-router-dom 7, CSS Modules + CSS variables (no Tailwind), lucide-react icons, react-leaflet 5 maps. Port **5173**, `/api` proxied to 8080.
+- `frontend/`: React 19 + TypeScript + Vite, react-router-dom 7, CSS Modules + CSS variables (no Tailwind), lucide-react icons, react-leaflet 5 maps, `qrcode` and `jsqr` for handover QR codes. Port **5173**, `/api` proxied to 8080.
 - `docker-compose.yml`: Postgres 16, db `reserve`, user `reserve`, password `reserve`, port 5432.
 - Live updates: **SSE** (`GET /api/stream`). Volunteer location: browser `watchPosition` → `POST /api/donations/{id}/location` every ~5s.
 
@@ -49,7 +49,9 @@ activities(id bigserial pk, type varchar, actor_id fk null, donation_id fk, crea
 otp_codes(phone pk, code, expires_at)
 ```
 
-Seed (Java `DataSeeder`, runs when users table is empty, times relative to now) around Tambaram/Chengalpattu (lat ~12.82–12.93, lng ~80.04–80.13): NGOs Hope Kitchen Trust, Little Hearts Home, Annai Shelter; donors Kalyan Mahal (event venue), Hotel Annapoorna, SRM Hostel Mess, Spice Route, Sunrise Bakery, Green Basket, TechPark Cafeteria, a home kitchen; volunteers Ravi Kumar, Priya S., Arjun M., Nithya V., Krrish Pandey. ~9 available donations across urgencies, 1 active claim (Veg biryani by Ravi to Hope Kitchen, PICKED_UP with a few location pings), ~30 days of delivered history for charts, a few expired. All seeded passwords `reserve123`. Demo logins: donor `9840100001` (Kalyan Mahal), volunteer `9840100002` (Krrish Pandey), NGO `9840100003` (Hope Kitchen Trust), volunteer Ravi `9840100004`.
+Later migrations: `V4__donation_source.sql` adds `donations.source varchar(16) not null default 'APP'` (`APP` or `VOICE`). `V5__push_subscriptions.sql` adds `push_subscriptions(id bigserial pk, user_id fk users not null, endpoint text unique not null, p256dh text not null, auth text not null, created_at timestamptz default now())`, indexed on `user_id`.
+
+Seed (Java `DataSeeder`, runs when users table is empty, times relative to now) around Tambaram/Chengalpattu (lat ~12.82–12.93, lng ~80.04–80.13): NGOs Annadhanam Seva Trust, Asha Deepam Children's Home, Karunai Illam Shelter; donors Kalyan Mahal (event venue), Hotel Annapoorna, SRM Mess, Spice Route, Sunrise Bakery, Green Basket, TechPark Cafeteria, a home kitchen; volunteers Ravi Kumar, Priya S., Arjun M., Nithya V., Divit Periwal. ~9 available donations across urgencies, 1 active claim (Veg biryani by Ravi to Annadhanam Seva Trust, PICKED_UP with a few location pings), eight weeks of patterned history from a fixed `Random(42)` (Kalyan Mahal weekend evenings, SRM Mess weekday afternoons, Sunrise Bakery nightly, TechPark weekday afternoons, Hotel Annapoorna Friday and Saturday late evenings, a few scattered posts; about 12% expired, the rest delivered) for charts, the surplus forecast and the heatmap, plus a few recent expired. All seeded passwords `reserve123`. Demo logins: donor `9840100001` (Kalyan Mahal), volunteer `9840100002` (Divit Periwal), NGO `9840100003` (Annadhanam Seva Trust), volunteer Ravi `9840100004`.
 
 ## REST API (JSON, `Authorization: Bearer <jwt>` except where public)
 
@@ -82,15 +84,43 @@ Errors: `{ "message": string, "fields"?: Record<string,string> }` with 400/401/4
 - `POST /api/donations/{id}/confirm-delivery` (NGO target) `{code}` → `Donation`
 - `POST /api/donations/{id}/location` (assigned VOLUNTEER, CLAIMED or PICKED_UP) `{lat, lng}` → 204
 - `GET /api/donations/{id}/route` (parties) → `{lat, lng, at}[]`
+- `GET /api/donations/{id}/nearby-volunteers` (the donor of that donation) → `{count: number}`, on-duty volunteers within 7 km of the pickup
 
 ### Uploads
 - `POST /api/uploads` (DONOR, multipart field `file`, JPG/PNG/WEBP ≤ 5 MB) → `{url: "/api/uploads/<uuid>.jpg"}`; stored on disk under `app.upload-dir` (default `./uploads`).
 - `GET /api/uploads/{name}` (public) → the image.
 
+### AI drafting
+- `GET /api/ai/status` (DONOR) → `{enabled: boolean}`; `enabled` is false unless `ANTHROPIC_API_KEY` is set.
+- `POST /api/ai/draft` (DONOR) `{photoUrl?, text?}` with exactly one set (else 400; `photoUrl` must be an uploaded photo, `text` up to 2000 characters, Tamil, Hindi or English) → `DonationDraft`. Every field may be missing, minutes count from now and are clamped to 0 to 2880. 404 `AI drafting is off` when no key is set; 422 `Couldn't read that, please fill the form yourself` when the model refuses, times out or fails; 429 after 30 drafts per donor per hour, or after `app.ai.global-per-hour` (`AI_GLOBAL_PER_HOUR`, default 200) drafts across all donors per hour (both per instance, in memory).
+
+### Voice hotline (Bolna)
+Public to Spring Security; every request must carry header `X-Voice-Secret` equal to `app.voice.secret` (`VOICE_SECRET`), compared in constant time. Secret unset: both endpoints 404 `Not found`. Missing or wrong header: 401 `Wrong voice secret`. The secret is checked before the body is read, and the body is capped at 16 KB: larger gets 413 `Request is too large`. A body that is not valid JSON gets 400 `Sorry, I could not read that request`. Error messages are short sentences the agent can read aloud. Setup in `docs/bolna.md`.
+- `POST /api/voice/lookup` `{phone}` → `{registered: boolean, name?, address?}`; `registered` only for a DONOR account.
+- `POST /api/voice/donations` `{phone, title, diet, category?, quantity, unit?, pickupFrom?, pickupUntil, bestBefore, covered, safeTemp, noReturns, allergensNoted, note?}` → `{code, message}`, for example `{"code":"RS-2481","message":"Done. RS-2481, 50 servings of veg biryani, is live. Pickup by 9 pm."}`.
+  - `phone`: non-digits stripped, last 10 digits kept (drops `+91` or a leading `0`); must belong to a DONOR, else 404 `This number is not registered as a donor on ReServe`.
+  - `diet`, `category`, `unit` are case-insensitive enum names (`veg`, `non veg`); `category` defaults to `COOKED`, `unit` to `SERVINGS`. `quantity` may arrive as a string (`"50"`); one that is not a whole number gives 400 `Tell me how much food there is, as a whole number`. Optional fields sent as `""`, `None` or `null` count as missing.
+  - Times are `+90` (minutes from now) or `21:00` (24 hour clock in `app.zone`, today, or tomorrow if already past); `pickupFrom` defaults to now. Otherwise 400 naming the field.
+  - All four safety answers must be exactly true (JSON `true` or the text `"true"`, any case; `1`, `"yes"`, empty or missing do not count), else 400 `We can only take food that is covered, kept at a safe temperature, never served, and has allergens noted`.
+  - Address and lat/lng come from the donor's profile. The built request runs the same bean constraints and service validation, POSTED activity and `donation` broadcast as `POST /api/donations`, with `source: VOICE`; a validation failure returns its first field message as `message`.
+
+### Web push
+Configured by `app.push.public-key`, `app.push.private-key`, `app.push.subject` (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, default `mailto:admin@reserve.local`). Off when either key is blank: nothing is sent and the profile toggle is hidden.
+- `GET /api/push/key` (public) → `{enabled: boolean, publicKey?}`.
+- `POST /api/push/subscribe` (any auth) `{endpoint, keys: {p256dh, auth}}` → 204; upserts by `endpoint`, which moves to the caller if another user had it. `endpoint` must be an `https://` URL on a browser push service (`*.googleapis.com`, `*.push.services.mozilla.com`, `*.push.apple.com`, `*.notify.windows.com`), else 400.
+- `GET /api/push/subscribed?endpoint=` (any auth) → `{subscribed: boolean}`, true only when the caller owns that endpoint's row.
+- `POST /api/push/unsubscribe` (any auth) `{endpoint}` → 204; deletes the caller's row for that endpoint.
+- Sending: `DonationService` publishes `DonationEvent(CREATED | ACCEPTED, donationId)` from the shared create path (app and voice) and from accept (the accepted row, which is the new row on a split). `PushNotifier` handles it after commit with `@Async` on Spring's task pool (`spring.task.execution.pool`, size `APP_TASK_POOL_SIZE`, default 2, queue 200). Payload is JSON `{title, body, url}`. Each push expires at the food deadline (best before for critical food, pickup by for an accept), clamped to 1 minute to 4 hours, and the critical alert is sent with high urgency. Subscriptions for all recipients load in one query; every send starts at once and all are awaited under one 10 s deadline, after which the rest are cancelled; a 404 or 410 answer deletes that subscription.
+  - Created with `bestBefore - now < 2h`: NGOs with `acceptingFood` within 7 km. `Critical food nearby`, `40 servings of veg biryani, 2.1 km away, best before 9:10 pm`, url `/ngo`.
+  - Accepted: the donor gets `A kitchen accepted your food`, `Annadhanam Seva Trust is taking 20 servings of veg biryani`, url `/donor`. On-duty volunteers within 7 km of the pickup get `Pickup needed`, `40 servings of veg biryani for Annadhanam Seva Trust, 2.1 km away, pick up by 9:10 pm`, url `/volunteer`.
+- Frontend: `public/manifest.webmanifest` with 192 and 512 icons makes the app installable; `public/sw.js` serves `/assets/` cache-first, navigations network-first with the cached `/` as fallback, never touches `/api`, shows `push` notifications and on click focuses an open tab on that path or opens it. A Notifications row on the volunteer, donor and NGO profiles turns push on for this browser (`src/lib/push.ts`). It shows on only when the browser has a subscription and `GET /api/push/subscribed` confirms the signed-in user owns it; a subscription is saved only when the user turns the toggle on. Signing out unsubscribes the browser on the server (with the outgoing token) and in the browser. The service worker stores a navigation as `/` only when it is `text/html`.
+
 ### Stats & activity
 - `GET /api/stats/public` (public) → `PublicStats`
 - `GET /api/stats/me` → `MyStats`
 - `GET /api/stats/dashboard?days=7|30` (NGO) → `DashboardStats`
+- `GET /api/stats/leaderboard?days=30` (public, `days` 1 to 90) → `Leaderboard`, delivered donations in the period, top 10 volunteers and donors by meals
+- `GET /api/stats/surplus?days=56` (NGO, `days` 7 to 90) → `SurplusMap`: delivered and expired donations as map points plus a forecast of the 6 expected donor slots with the most meals that fall within the next 7 days, soonest first. A slot is one donor on one weekday in a 3 hour window (`from` to `until` is its next occurrence in `app.zone`); it needs posts in at least 2 of the last 8 weeks, and `expectedMeals` is the meals in those posts divided by the weeks seen
 - `GET /api/activity?limit=20` (any auth) → `Activity[]`
 - `GET /api/export.csv?days=7|30` (NGO, token may come as `?token=`) → `text/csv`
 
@@ -109,6 +139,7 @@ type Diet = 'VEG' | 'NON_VEG';
 type Category = 'COOKED' | 'BAKERY' | 'FRUIT_VEG' | 'PACKAGED' | 'RAW';
 type Unit = 'SERVINGS' | 'KG' | 'PACKS';
 type Status = 'AVAILABLE' | 'ACCEPTED' | 'CLAIMED' | 'PICKED_UP' | 'DELIVERED' | 'EXPIRED' | 'CANCELLED';
+type Source = 'APP' | 'VOICE';
 type SafetyCheck = 'COVERED' | 'SAFE_TEMP' | 'NO_RETURNS' | 'ALLERGENS_NOTED';
 
 interface NgoRef { id: number; name: string; address: string; lat: number; lng: number }
@@ -120,7 +151,7 @@ interface PersonRef { id: number; name: string; initials: string; phone: string;
 interface Donation { id: number; code: string /* "RS-2481" */; title: string; diet: Diet; category: Category;
   quantity: number; unit: Unit; weightKg: number; containers?: number; photoUrl?: string; note?: string;
   address: string; lat: number; lng: number; preparedAt?: string; bestBefore: string; pickupFrom: string;
-  pickupUntil: string; safetyChecks: SafetyCheck[]; status: Status; donor: PersonRef; volunteer?: PersonRef;
+  pickupUntil: string; safetyChecks: SafetyCheck[]; status: Status; source: Source; donor: PersonRef; volunteer?: PersonRef;
   ngo?: NgoRef; claimedAt?: string; pickedUpAt?: string; deliveredAt?: string; createdAt: string;
   distanceKm?: number; meals: number; pickupCode?: string; dropCode?: string;
   lastLocation?: { lat: number; lng: number; at: string } }
@@ -130,7 +161,19 @@ interface CreateDonation { title: string; diet: Diet; category: Category; quanti
 interface PublicStats { mealsRescued: number; foodKg: number; co2Kg: number; activeVolunteers: number;
   partnerNgos: number; livePickups: number; medianPickupMinutes: number; deliveredBeforeExpiryPct: number }
 interface MyStats { monthLabel: string; pickups: number; meals: number; rank?: number; donations?: number;
-  live?: number; nextBadge?: { name: string; current: number; target: number } }
+  live?: number; nextBadge?: { name: string; current: number; target: number };
+  allTime: { count: number; meals: number; foodKg: number; co2Kg: number; since: string /* user createdAt */ };
+  earnedBadges: string[] /* volunteer: badges reached this month; empty for other roles */ }
+interface NearbyVolunteers { count: number }
+interface Leaderboard { days: number; meals: number; foodKg: number; co2Kg: number;
+  volunteers: { id: number; name: string; initials: string; pickups: number; meals: number; badge?: string }[];
+  donors: { id: number; name: string; initials: string; donations: number; meals: number }[] }
+interface DonationDraft { title?: string; diet?: Diet; category?: Category; quantity?: number; unit?: Unit;
+  bestBeforeMinutes?: number; pickupFromMinutes?: number; pickupUntilMinutes?: number; note?: string }
+interface SurplusForecastEntry { donorId: number; donorName: string; address: string; lat: number; lng: number;
+  from: string; until: string; expectedMeals: number; weeksSeen: number; weeksLooked: number /* always 8 */ }
+interface SurplusMap { days: number; points: { lat: number; lng: number; kg: number; status: Status }[];
+  forecast: SurplusForecastEntry[] }
 interface DashboardStats { days: number; mealsRescued: number; mealsDeltaPct: number; foodKg: number;
   foodDeltaKg: number; medianPickupMinutes: number; medianDeltaMinutes: number; deliveredBeforeExpiryPct: number;
   perDay: { date: string; meals: number }[]; funnel: { posted: number; claimed: number; pickedUp: number;
@@ -142,6 +185,17 @@ interface Activity { id: number; type: 'POSTED' | 'ACCEPTED' | 'CLAIMED' | 'PICK
 ```
 
 Timestamps are ISO-8601 with offset (`OffsetDateTime`). JSON field names exactly as above (camelCase).
+
+## Client features (frontend only, no extra endpoints)
+
+- **Rescue risk** (`lib/risk.ts`, `RiskBadge`). `total` is the minutes still needed: to the donor, 10 for handover, to the kitchen, 10 for handover (only the kitchen leg and handover once `PICKED_UP`). A leg with no known start uses 15 minutes; otherwise it is the straight-line distance at 18 km/h. `spare = bestBefore - (now + total)`. Level `AT_RISK` if `spare < 0` or the donor cannot be reached before `pickupUntil`, `TIGHT` if `spare < 30` minutes, else `SAFE`. Shown as "Safe, 45 min to spare", "Tight, 12 min to spare" or "At risk" on the kitchen feed, the volunteer pickup views and `/track/:id`. For an `AVAILABLE` donation the kitchen is the viewing NGO.
+- **Road routing** (`lib/route.ts`). `GET {VITE_OSRM_URL}/route/v1/driving/{lng,lat;lng,lat}?overview=full&geometries=geojson`, default host `https://router.project-osrm.org`. 6 second timeout, results cached per pair of points, refetched only when an end moves more than 50 m. The map leg, the ETA and the "Simulate ride" movement follow the road path; on any failure they fall back to a straight line at 18 km/h. Simulation moves 0.2 km every 3 seconds and is offered when GPS is denied, unavailable or more than 30 km from the pickup.
+- **QR handover** (`features/tracking`). The volunteer's active pickup shows a QR code beside the 4-digit code. The QR text is `reserve:<donationId>:<code>`. The donor's "Confirm pickup" and the NGO's "Confirm delivery" sheets accept the typed digits or a camera scan (`jsqr`); a scan for another donation, or text in another format, is rejected. The code is still verified by the existing `confirm-pickup` and `confirm-delivery` endpoints.
+- **AI autofill** (donor post form). "Fill from photo" uploads through `POST /api/uploads` then calls `POST /api/ai/draft` with `photoUrl`; "Describe it" uses the browser speech recognition (English, Tamil or Hindi) and sends the transcript as `text`. Hidden when `GET /api/ai/status` says disabled. `DonationDraft` minutes are applied relative to now and the donor reviews every field before posting.
+- **Impact and sharing.** `/leaderboard` (public) shows `Leaderboard` for 30 days. `/certificate` (any signed-in role) prints the all-time `MyStats.allTime` with the browser's Save as PDF. Impact cards link to it from the volunteer impact page and the donor and NGO profiles.
+- **NGO map and insights.** The map has a History toggle (30 or 56 days) drawing `SurplusMap.points`, green for `DELIVERED` and red for `EXPIRED`, sized by kg. Insights lists the `SurplusMap.forecast` as "Expected surplus".
+- **Languages** (`lib/i18n.tsx`). English, Tamil (`ta`) and Hindi (`hi`). Strings are looked up by their English text in `src/locales/ta.ts` and `hi.ts`, falling back to English; the choice is kept in `localStorage` key `reserve.lang` and sets `<html lang>`. A test fails when a key used in the code is missing from a dictionary.
+- **Routes added.** `/leaderboard` (public) and `/certificate` (DONOR, NGO, VOLUNTEER), beside the screens listed below.
 
 ## Design system (frontend), v3: white, Apple, basil
 
@@ -169,7 +223,7 @@ v2 (monochrome, mono numerals, everything visible at once) was judged **cluttere
 - **Auth `/auth`:** a single centred column (max 400px) on white: logo, title, segmented Sign in / Create account, the form. Create account is **stepped**: step 1 choose role (3 large rows), step 2 name + phone + password (+ vehicle or org type), step 3 home address with "Use my location". OTP sign-in is a link that swaps the form. Demo accounts as one subtle "Try a demo account" row that opens a sheet with the three accounts. No side panel.
 - **Volunteer:**
   - `/volunteer` **Pickups**: desktop = split view like Apple Maps: left column (about 420px) with large title "Pickups", one search field, one `Segmented` (All, Under 1 hr, Veg), then a single list of rows (food glyph, title, "donor, 1.2 km", trailing countdown). Right = full-height map with pins. Selecting a row (or pin) opens its **detail panel/sheet** with the full info and one big "Claim pickup" button. No category tiles, no alert banners, no impact card on this screen. If an active pickup exists, one basil row at the top of the list ("You're on a pickup, Veg biryani") opens it. Phone = the same list full width with a map toggle in the header; detail opens as a bottom sheet.
-  - `/volunteer/pickup/:id` **Active pickup**: full-screen map with one floating card (desktop: left card over the map; phone: bottom sheet). The card shows only: phase title ("Head to Kalyan Mahal" / "Deliver to Hope Kitchen"), ETA large, a 3-step progress, the 4-digit code to show (large), one primary action (Navigate, opens Google Maps directions) and a secondary "Release". Live location sharing and the "Simulate ride" switch stay, tucked in one row.
+  - `/volunteer/pickup/:id` **Active pickup**: full-screen map with one floating card (desktop: left card over the map; phone: bottom sheet). The card shows only: phase title ("Head to Kalyan Mahal" / "Deliver to Annadhanam Seva Trust"), ETA large, a 3-step progress, the 4-digit code to show (large), one primary action (Navigate, opens Google Maps directions) and a secondary "Release". Live location sharing and the "Simulate ride" switch stay, tucked in one row.
   - `/volunteer/impact`: large numbers (meals, pickups, rank), badge progress, then history as a grouped list.
   - `/volunteer/profile`: Apple Settings style grouped list: name, vehicle, deliver to (NGO picker in a sheet), On duty toggle, Sign out.
 - **Donor:**

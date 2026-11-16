@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Button, Field } from '../../components/ui';
 import { api } from '../../lib/api';
+import { useT } from '../../lib/i18n';
 import { FormError, PasswordField, PhoneField } from './fields';
 import { PHONE_ERROR, digits, focusFirst, readError, useFinishAuth, validPhone, type Errors } from './authUtils';
 import s from './AuthPage.module.css';
@@ -13,6 +14,7 @@ const order: [string, string][] = [
 
 export function SignIn() {
   const finish = useFinishAuth();
+  const t = useT();
   const [mode, setMode] = useState<'password' | 'code'>('password');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +25,7 @@ export function SignIn() {
   const [busy, setBusy] = useState(false);
 
   const fail = (err: unknown) => {
-    const { fields, message } = readError(err);
+    const { fields, message } = readError(err, t);
     setErrors(fields);
     setFormError(message);
     focusFirst(order, fields);
@@ -40,7 +42,7 @@ export function SignIn() {
 
   const submitPassword = async (e: FormEvent) => {
     e.preventDefault();
-    if (invalid({ phone: validPhone(phone) ? undefined : PHONE_ERROR, password: password ? undefined : 'Enter your password' })) return;
+    if (invalid({ phone: validPhone(phone) ? undefined : t(PHONE_ERROR), password: password ? undefined : t('Enter your password') })) return;
     setBusy(true);
     try {
       finish(await api.login(phone, password));
@@ -51,7 +53,7 @@ export function SignIn() {
 
   const sendCode = async (e?: FormEvent) => {
     e?.preventDefault();
-    if (invalid({ phone: validPhone(phone) ? undefined : PHONE_ERROR })) return;
+    if (invalid({ phone: validPhone(phone) ? undefined : t(PHONE_ERROR) })) return;
     setBusy(true);
     try {
       const res = await api.requestOtp(phone);
@@ -66,7 +68,7 @@ export function SignIn() {
 
   const verify = async (e: FormEvent) => {
     e.preventDefault();
-    if (invalid({ code: code.length === 6 ? undefined : 'Enter the 6-digit code' })) return;
+    if (invalid({ code: code.length === 6 ? undefined : t('Enter the 6-digit code') })) return;
     setBusy(true);
     try {
       finish(await api.verifyOtp(phone, code));
@@ -90,7 +92,7 @@ export function SignIn() {
         setPhone(v);
         if (errors.phone && validPhone(v)) setErrors((x) => ({ ...x, phone: undefined }));
       }}
-      onBlur={() => phone && setErrors((x) => ({ ...x, phone: validPhone(phone) ? undefined : PHONE_ERROR }))}
+      onBlur={() => phone && setErrors((x) => ({ ...x, phone: validPhone(phone) ? undefined : t(PHONE_ERROR) }))}
       error={errors.phone}
     />
   );
@@ -111,10 +113,10 @@ export function SignIn() {
         />
         <FormError>{formError}</FormError>
         <Button type="submit" size="lg" block loading={busy}>
-          {busy ? 'Signing in' : 'Sign in'}
+          {t(busy ? 'Signing in' : 'Sign in')}
         </Button>
         <button type="button" className={s.textLink} onClick={switchMode}>
-          Sign in with a code instead
+          {t('Sign in with a code instead')}
         </button>
       </form>
     );
@@ -125,7 +127,7 @@ export function SignIn() {
       {sent && (
         <Field
           id="si-code"
-          label="6-digit code"
+          label={t('6-digit code')}
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={6}
@@ -138,22 +140,23 @@ export function SignIn() {
           error={errors.code}
           hint={
             <>
-              Sent to +91 {phone}.{sent.devCode && <> Demo code: <strong className={s.devCode}>{sent.devCode}</strong></>}
+              {t('Sent to +91 {phone}.', { phone })}
+              {sent.devCode && <> {t('Your code:')} <strong className={s.devCode}>{sent.devCode}</strong></>}
             </>
           }
         />
       )}
       <FormError>{formError}</FormError>
       <Button type="submit" size="lg" block loading={busy}>
-        {sent ? (busy ? 'Verifying' : 'Verify and sign in') : busy ? 'Sending code' : 'Send code'}
+        {t(sent ? (busy ? 'Verifying' : 'Verify and sign in') : busy ? 'Sending code' : 'Send code')}
       </Button>
       <div className={s.linkRow}>
         <button type="button" className={s.textLink} onClick={switchMode}>
-          Use password instead
+          {t('Use password instead')}
         </button>
         {sent && (
           <button type="button" className={s.textLink} onClick={() => sendCode()} disabled={busy}>
-            Resend code
+            {t('Resend code')}
           </button>
         )}
       </div>

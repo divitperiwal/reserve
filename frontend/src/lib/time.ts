@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { dateLocale, fill, type T } from './i18n';
 import type { Urgency } from './types';
 
 const HOUR = 3_600_000;
@@ -48,32 +49,23 @@ export function clock(ms: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
 }
 
-export function shortLeft(ms: number): string {
-  if (ms <= 0) return 'Expired';
-  const totalMin = Math.floor(ms / 60_000);
-  const h = Math.floor(totalMin / 60);
-  const m = totalMin % 60;
-  if (h === 0) return `${m}m left`;
-  return `${h}h ${String(m).padStart(2, '0')}m left`;
-}
-
-export function timeOfDay(iso: string, now = Date.now()): string {
+export function timeOfDay(iso: string, t: T = fill, now = Date.now()): string {
   const d = new Date(iso);
-  const t = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
+  const time = d.toLocaleTimeString(dateLocale(), { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
   const today = new Date(now);
   const tomorrow = new Date(now + 24 * HOUR);
-  if (d.toDateString() === today.toDateString()) return t;
-  if (d.toDateString() === tomorrow.toDateString()) return `${t} tmrw`;
-  return `${d.toLocaleDateString('en-IN', { weekday: 'short' })} ${t}`;
+  if (d.toDateString() === today.toDateString()) return time;
+  if (d.toDateString() === tomorrow.toDateString()) return t('{time} tomorrow', { time });
+  return `${d.toLocaleDateString(dateLocale(), { weekday: 'short' })} ${time}`;
 }
 
-export function ago(iso: string, now = Date.now()): string {
+export function ago(iso: string, t: T = fill, now = Date.now()): string {
   const min = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60_000));
-  if (min < 1) return 'now';
-  if (min < 60) return `${min}m`;
+  if (min < 1) return t('now');
+  if (min < 60) return t('{m}m', { m: min });
   const h = Math.floor(min / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
+  if (h < 24) return t('{h}h', { h });
+  return t('{d}d', { d: Math.floor(h / 24) });
 }
 
 // Fraction of shelf life still remaining, from creation to best-before
