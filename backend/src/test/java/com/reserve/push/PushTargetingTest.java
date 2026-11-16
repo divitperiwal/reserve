@@ -50,7 +50,8 @@ class PushTargetingTest {
         List<PushTargeting.Delivery> out = PushTargeting.created(donation(130 - 20), List.of(near, paused, far, volunteer), NOW, ZONE);
 
         assertEquals(List.of("Hope Kitchen"), names(out));
-        assertEquals(new PushMessage("Critical food nearby", "40 servings of veg biryani, 2.1 km away, best before 8:50 pm", "/ngo"),
+        assertEquals(new PushMessage("Critical food nearby", "40 servings of veg biryani, 2.1 km away, best before 8:50 pm", "/ngo",
+                NOW.plusMinutes(110), true),
                 out.get(0).message());
     }
 
@@ -74,9 +75,11 @@ class PushTargetingTest {
         List<PushTargeting.Delivery> out = PushTargeting.accepted(d, List.of(onDuty, offDuty, far), ZONE);
 
         assertEquals(List.of("Kalyan Mahal", "Arun"), names(out));
-        assertEquals(new PushMessage("A kitchen accepted your food", "Hope Kitchen is taking 40 servings of veg biryani", "/donor"),
+        assertEquals(new PushMessage("A kitchen accepted your food", "Hope Kitchen is taking 40 servings of veg biryani", "/donor",
+                NOW.plusMinutes(150), false),
                 out.get(0).message());
-        assertEquals(new PushMessage("Pickup needed", "40 servings of veg biryani for Hope Kitchen, 0.5 km away, pick up by 9:30 pm", "/volunteer"),
+        assertEquals(new PushMessage("Pickup needed", "40 servings of veg biryani for Hope Kitchen, 0.5 km away, pick up by 9:30 pm", "/volunteer",
+                NOW.plusMinutes(150), false),
                 out.get(1).message());
     }
 

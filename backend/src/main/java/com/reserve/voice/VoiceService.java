@@ -16,6 +16,8 @@ import com.reserve.user.User;
 import com.reserve.user.UserRepository;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.RecordComponent;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -38,6 +40,7 @@ public class VoiceService {
     static final String NOT_DONOR = "This number is not registered as a donor on ReServe";
     static final String UNSAFE = "We can only take food that is covered, kept at a safe temperature, never served, and has allergens noted";
     static final String UNREADABLE = "Sorry, I could not read that request";
+    static final int MAX_BODY = 16 * 1024;
     static final String QUANTITY = "Tell me how much food there is, as a whole number";
 
     private final byte[] secret;
@@ -65,6 +68,14 @@ public class VoiceService {
         if (given == null || !MessageDigest.isEqual(secret, given.getBytes(StandardCharsets.UTF_8))) {
             throw ApiException.unauthorized("Wrong voice secret");
         }
+    }
+
+    public String body(InputStream in) throws IOException {
+        byte[] bytes = in.readNBytes(MAX_BODY + 1);
+        if (bytes.length > MAX_BODY) {
+            throw ApiException.payloadTooLarge("Request is too large");
+        }
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     public <T> T read(String body, Class<T> type) {

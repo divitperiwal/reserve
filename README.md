@@ -75,6 +75,7 @@ Backend environment variables:
 | `APP_TASK_POOL_SIZE` | `2` | Threads for background work such as push sends |
 | `ANTHROPIC_API_KEY` | unset, drafting off | Enables photo and voice autofill |
 | `AI_MODEL` | `claude-opus-5-5` | Model used for autofill |
+| `AI_GLOBAL_PER_HOUR` | `200` | Autofill drafts per hour across all donors, on top of 30 per donor |
 | `VOICE_SECRET` | unset, hotline off | Shared secret Bolna sends in `X-Voice-Secret` |
 | `VAPID_PUBLIC_KEY` | unset, push off | Web push public key |
 | `VAPID_PRIVATE_KEY` | unset, push off | Web push private key |

@@ -3,12 +3,15 @@ package com.reserve.push;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.GeneralSecurityException;
 import java.security.Security;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import nl.martijndwars.webpush.Notification;
+import nl.martijndwars.webpush.Urgency;
 import org.apache.http.HttpResponse;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
@@ -22,6 +25,8 @@ public class PushService {
 
     private static final Logger log = LoggerFactory.getLogger(PushService.class);
     private static final long TIMEOUT_SECONDS = 10;
+    private static final long MIN_TTL_SECONDS = 60;
+    private static final long MAX_TTL_SECONDS = Duration.ofHours(4).toSeconds();
 
     private final nl.martijndwars.webpush.PushService client;
     private final String publicKey;
@@ -76,6 +81,11 @@ public class PushService {
         return subscriptions.existsByEndpointAndUserId(endpoint, userId);
     }
 
+    // An alert is worthless once the food is gone, so it lives until then, between 1 minute and 4 hours
+    static int ttlSeconds(OffsetDateTime expiresAt, OffsetDateTime now) {
+        return (int) Math.max(MIN_TTL_SECONDS, Math.min(MAX_TTL_SECONDS, Duration.between(now, expiresAt).toSeconds()));
+    }
+
     // Starts every send at once, then waits for all under one 10 s deadline; 404 or 410 means the endpoint is gone
     public void send(Map<Long, PushMessage> messages) {
         if (client == null || messages.isEmpty()) {
@@ -84,8 +94,16 @@ public class PushService {
         Map<PushSubscription, Future<HttpResponse>> pending = new LinkedHashMap<>();
         for (PushSubscription s : subscriptions.findByUserIdIn(messages.keySet())) {
             try {
-                byte[] payload = json.writeValueAsBytes(messages.get(s.getUserId()));
-                pending.put(s, client.sendAsync(new Notification(s.getEndpoint(), s.getP256dh(), s.getAuth(), payload)));
+                PushMessage message = messages.get(s.getUserId());
+                Notification notification = Notification.builder()
+                        .endpoint(s.getEndpoint())
+                        .userPublicKey(s.getP256dh())
+                        .userAuth(s.getAuth())
+                        .payload(json.writeValueAsBytes(message))
+                        .ttl(ttlSeconds(message.expiresAt(), OffsetDateTime.now()))
+                        .urgency(message.urgent() ? Urgency.HIGH : Urgency.NORMAL)
+                        .build();
+                pending.put(s, client.sendAsync(notification));
             } catch (Exception e) {
                 log.warn("Push to user {} failed: {}", s.getUserId(), e.toString());
             }

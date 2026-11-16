@@ -34,7 +34,7 @@ public final class PushTargeting {
         }
         String until = time(d.getBestBefore(), zone);
         return nearby(d, ngos, u -> u.getRole() == Role.NGO && u.isAcceptingFood(), km ->
-                new PushMessage("Critical food nearby", what(d) + ", " + km + " away, best before " + until, "/ngo"));
+                new PushMessage("Critical food nearby", what(d) + ", " + km + " away, best before " + until, "/ngo", d.getBestBefore(), true));
     }
 
     // Food a kitchen has accepted goes to its donor and to on-duty volunteers within 7 km of the pickup
@@ -45,9 +45,9 @@ public final class PushTargeting {
         String until = time(d.getPickupUntil(), zone);
         String to = d.getNgo().getName();
         Delivery donor = new Delivery(d.getDonor(),
-                new PushMessage("A kitchen accepted your food", to + " is taking " + what(d), "/donor"));
+                new PushMessage("A kitchen accepted your food", to + " is taking " + what(d), "/donor", d.getPickupUntil(), false));
         List<Delivery> riders = nearby(d, volunteers, u -> u.getRole() == Role.VOLUNTEER && u.isOnDuty(), km ->
-                new PushMessage("Pickup needed", what(d) + " for " + to + ", " + km + " away, pick up by " + until, "/volunteer"));
+                new PushMessage("Pickup needed", what(d) + " for " + to + ", " + km + " away, pick up by " + until, "/volunteer", d.getPickupUntil(), false));
         return Stream.concat(Stream.of(donor), riders.stream()).toList();
     }
 
