@@ -109,6 +109,15 @@ cloudflared tunnel --url http://localhost:5173
 cloudflared tunnel --url http://localhost:8080
 ```
 
+In PowerShell, set the variable on its own line first:
+
+```powershell
+cd frontend
+$env:__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = ".trycloudflare.com"; npm run dev
+```
+
+The same applies to the other `VAR=value command` examples in this README and in `docs/demo.md`: use `$env:VAR = "value"` before the command.
+
 Open the printed `https://....trycloudflare.com` address on the phone. Vite blocks unknown host names unless they are allowed, so use the allowed-hosts variable shown above. For ngrok use `.ngrok-free.app` (or the host ngrok prints) and `ngrok http 5173` or `ngrok http 8080`. The hotline URL in the Bolna functions is the backend tunnel, as in `docs/bolna.md`.
 
 ## Reset the dev database
@@ -116,14 +125,18 @@ Open the printed `https://....trycloudflare.com` address on the phone. Vite bloc
 The seed runs only when the `users` table is empty, and Flyway adds new tables on start. A database created before the wow-factor features has the old seed, so wipe it to get eight weeks of patterned history for the surplus forecast and heatmap:
 
 ```bash
-docker compose down -v   # removes the reserve-db volume
+docker compose down -v   # removes only this project's own reserve-db volume
 docker compose up -d
 ```
 
-Then start the backend again. If you run Postgres some other way, drop and recreate the schema instead:
+Then start the backend again. `docker compose` here means the `docker-compose.yml` in this repo, which owns one volume, `reserve-db`. It does not touch other containers or databases.
+
+If your ReServe database runs somewhere else (for example a separate container on another port, started with `DB_URL=jdbc:postgresql://localhost:5436/reserve`), reset it with `psql` against the host and port from your `DB_URL`. This deletes everything in the `reserve` database, so make sure the URL points at ReServe and not at another project's database:
 
 ```bash
-psql "postgresql://reserve:reserve@localhost:5432/reserve" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+psql "postgresql://reserve:reserve@localhost:5436/reserve" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 ```
+
+Replace `localhost:5436` with the host and port in your `DB_URL`, and the user and password with your `DB_USER` and `DB_PASSWORD`. Never run it against a database you did not create for ReServe.
 
 Seeded times are relative to the moment the backend first starts, so reset shortly before a demo.

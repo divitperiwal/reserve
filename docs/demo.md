@@ -4,7 +4,7 @@ About 6 minutes, 7 with questions. One story: food is posted by phone, a kitchen
 
 ## Before you start (15 minutes ahead)
 
-1. Reset the dev database so the seed times are fresh and the forecast has history (see "Reset the dev database" in the README).
+1. Reset the dev database so the seed times are fresh and the forecast has history. Follow "Reset the dev database" in the README, and run it only against the ReServe database, never another project's.
 2. Start the backend with every integration on:
 
    ```bash
@@ -13,12 +13,15 @@ About 6 minutes, 7 with questions. One story: food is posted by phone, a kitchen
    VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... mvn spring-boot:run
    ```
 
+   On Windows PowerShell set each variable first, for example `$env:VOICE_SECRET = "change-me-to-something-long"; mvn spring-boot:run` (same for the other variables and for the frontend allowed-hosts variable in the README).
+
 3. Start the frontend and tunnel it for the phone, and tunnel the backend for Bolna (README, "Phones and the hotline"). Put the backend tunnel address in the two Bolna functions (`docs/bolna.md`).
 4. Make your own donor account. In the app choose Create account, Donor, and use the mobile number you will call from. On the address step type any address and do not tap Use my location, so the account stays at the default Tambaram spot, near the kitchens. Use this account for the whole demo.
-5. Open three windows on the laptop: donor (your new account), kitchen (Hope Kitchen Trust, `9840100003`) and volunteer (Krrish Pandey, `9840100002`). Password for the demo accounts is `reserve123`. On a phone, open the tunnel address and sign in as the volunteer there instead if you want the QR on a real screen.
-6. In the kitchen window open Profile and turn Notifications on, and allow the browser prompt. Keep Accepting food on (Today).
-7. Do one practice call so Bolna and the tunnel are warm. Delete or ignore the practice post.
-8. Have these ready as fallbacks: a recorded video of the autofill, one of the phone call, and a screenshot of the push alert. The photo to upload is `frontend/public/food/biryani.jpg`.
+5. Open two windows on the laptop: donor (your new account) and kitchen (Hope Kitchen Trust, `9840100003`). Run the volunteer (Krrish Pandey, `9840100002`) on a phone: open the tunnel address there and sign in. The password for the demo accounts is `reserve123`. A second device is needed because a laptop camera cannot scan the laptop's own screen (step 7); with no phone, open the volunteer in a third laptop window and type the digits.
+6. In the volunteer session, block location for the site (browser lock icon, Location, Block) and reload. The Simulate ride switch only appears when location is blocked, unavailable or more than 30 km from the pickup, so this makes step 6 work wherever you are presenting.
+7. In the kitchen window open Profile and turn Notifications on, and allow the browser prompt. Keep Accepting food on (Today).
+8. Do one practice call so Bolna and the tunnel are warm. Delete or ignore the practice post.
+9. Have these ready as fallbacks: a recorded video of the autofill, one of the phone call, and a screenshot of the push alert. The photo to upload is `frontend/public/food/biryani.jpg`.
 
 ## The script
 
@@ -40,7 +43,7 @@ Call the Bolna number from the mobile you registered. Answer the agent: veg biry
 
 Keep the hour short on purpose: under 2 hours to best before makes the food critical, which is what triggers the push alert in the next step.
 
-Fallback: play the recorded call. Or post the same food from the terminal while you talk, using the typed request in `docs/bolna.md` section 5 (change the phone to yours and use `+45` and `+60` for the times). It appears the same way, marked By phone.
+Fallback: play the recorded call. Or post the same food from the terminal while you talk, using the typed request in `docs/bolna.md` section 5. It needs the backend started with `VOICE_SECRET`, the header `X-Voice-Secret` set to that same value, and a `phone` that belongs to a registered donor, so use the number of the donor account you made (the seed donors work too). Use `+45` and `+60` for the times. It appears the same way, marked By phone.
 
 ### 4. The kitchen sees it: risk badge and push (2:50 to 3:30)
 
@@ -58,13 +61,13 @@ Fallback: nothing external here. If the accept fails, check Accepting food is on
 
 In the volunteer window the new pickup appears. Claim it with the Accept button and open the active pickup. Turn on Simulate ride. The rider moves along the real road on the donor and kitchen maps, and the ETA counts down. Say: "Location is shared live with the donor and the kitchen."
 
-Fallback: if the road service is slow or offline the ride switches to a straight line by itself (or set `VITE_OSRM_URL` to your own server), and it still shows live tracking. If the Simulate ride switch is missing, GPS thinks you are near the pickup; block location for the site in the browser and reload.
+Fallback: if the road service is slow or offline the ride switches to a straight line by itself (or set `VITE_OSRM_URL` to your own server), and it still shows live tracking. If the Simulate ride switch is missing, location is not blocked: block it for the site (prep step 6) and reload.
 
 ### 7. QR handovers (5:00 to 5:40)
 
-On the volunteer screen show the QR code and the 4 digit code for the pickup. In the donor window open Track, then Confirm pickup, then Scan code, and point the camera at the volunteer screen. Say: "Handover is proven by a code only the volunteer has." Run the ride to the kitchen and repeat in the kitchen window: Confirm delivery and Scan code.
+On the volunteer's phone show the QR code and the 4 digit code for the pickup. In the donor window open Track, then Confirm pickup, then Scan code, and point the laptop camera at the phone screen. Say: "Handover is proven by a code only the volunteer has." Run the ride to the kitchen and repeat in the kitchen window: Confirm delivery and Scan code.
 
-Fallback: type the 4 digits instead of scanning (the camera needs https or localhost, and the donor window on `localhost` is fine). The code is on the volunteer screen under the QR.
+Fallback: type the 4 digits instead of scanning. Do this whenever you have no second device, since a laptop cannot scan its own screen, or when the camera is blocked (it needs https or localhost, and the donor window on `localhost` is fine). The code is on the volunteer screen under the QR.
 
 ### 8. NGO insights, heatmap and forecast (5:40 to 6:20)
 
