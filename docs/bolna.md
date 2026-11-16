@@ -187,4 +187,4 @@ curl -s -H "X-Voice-Secret: $SECRET" -H "Content-Type: application/json" \
   $HOST/api/voice/donations
 ```
 
-Sign in as the NGO demo account (`9840100003`, password `reserve123`) and the donation appears under Available food with a "By phone" badge.
+Sign in as the NGO account (`9840100003`, password `reserve123`) and the donation appears under Available food with a "By phone" badge.

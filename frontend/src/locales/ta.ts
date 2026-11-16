@@ -94,7 +94,7 @@ export const ta: Record<string, string> = {
   'Sign in with a code instead': 'குறியீடு மூலம் உள்நுழையுங்கள்',
   '6-digit code': '6 இலக்கக் குறியீடு',
   'Sent to +91 {phone}.': '+91 {phone} க்கு அனுப்பப்பட்டது.',
-  'Demo code:': 'டெமோ குறியீடு:',
+  'Your code:': 'உங்கள் குறியீடு:',
   Verifying: 'சரிபார்க்கிறது',
   'Verify and sign in': 'சரிபார்த்து உள்நுழையுங்கள்',
   'Sending code': 'குறியீடு அனுப்புகிறது',

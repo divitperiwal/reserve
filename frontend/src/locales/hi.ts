@@ -94,7 +94,7 @@ export const hi: Record<string, string> = {
   'Sign in with a code instead': 'कोड से साइन इन करें',
   '6-digit code': '6 अंकों का कोड',
   'Sent to +91 {phone}.': '+91 {phone} पर भेजा गया।',
-  'Demo code:': 'डेमो कोड:',
+  'Your code:': 'आपका कोड:',
   Verifying: 'जाँच हो रही है',
   'Verify and sign in': 'जाँचें और साइन इन करें',
   'Sending code': 'कोड भेजा जा रहा है',

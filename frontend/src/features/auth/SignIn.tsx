@@ -141,7 +141,7 @@ export function SignIn() {
           hint={
             <>
               {t('Sent to +91 {phone}.', { phone })}
-              {sent.devCode && <> {t('Demo code:')} <strong className={s.devCode}>{sent.devCode}</strong></>}
+              {sent.devCode && <> {t('Your code:')} <strong className={s.devCode}>{sent.devCode}</strong></>}
             </>
           }
         />

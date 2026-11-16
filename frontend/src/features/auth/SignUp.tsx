@@ -171,7 +171,7 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
               id="su-name"
               label={t(role === 'VOLUNTEER' ? 'Full name' : 'Name of your place')}
               autoComplete={role === 'VOLUNTEER' ? 'name' : 'organization'}
-              placeholder={role === 'VOLUNTEER' ? 'Priya S.' : role === 'NGO' ? 'Hope Kitchen Trust' : 'Hotel Annapoorna'}
+              placeholder={role === 'VOLUNTEER' ? 'Priya S.' : role === 'NGO' ? 'Annadhanam Seva Trust' : 'Hotel Annapoorna'}
               value={name}
               onChange={(e) => edit('name', e.target.value, setName)}
               onBlur={() => name && setErrors((x) => ({ ...x, name: check('name', name) }))}

@@ -73,7 +73,7 @@ Backend `seed/DataSeeder.java`.
 
 - Replace the roughly 30 days of delivered history with 8 weeks generated from a fixed `Random(42)` and recurring donor patterns, so the forecast and heatmap show something real:
   - Kalyan Mahal: Saturday and Sunday, pickup 20:00 to 23:00, 80 to 120 servings.
-  - SRM Hostel Mess: Monday to Friday, 14:00 to 16:00, 30 to 50 servings.
+  - SRM Mess: Monday to Friday, 14:00 to 16:00, 30 to 50 servings.
   - Sunrise Bakery: daily, 21:00 to 22:30, 10 to 20 packs.
   - TechPark Cafeteria: Monday to Friday, 15:00 to 17:00, 20 to 40 servings.
   - Hotel Annapoorna: Friday and Saturday, 22:00 to 23:30, 25 to 45 servings.

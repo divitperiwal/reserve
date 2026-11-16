@@ -81,24 +81,24 @@ public class DataSeeder implements ApplicationRunner {
         passwordHash = encoder.encode("reserve123");
         OffsetDateTime now = OffsetDateTime.now();
 
-        User hope = user(Role.NGO, "Hope Kitchen Trust", "9840100003", "Community kitchen", null, "14 GST Road, Guduvanchery", 12.8452, 80.0601, "4.9");
-        User littleHearts = user(Role.NGO, "Little Hearts Home", "9840100011", "Children's home", null, "7 Church Street, Tambaram West", 12.9246, 80.1103, "4.8");
-        User annai = user(Role.NGO, "Annai Shelter", "9840100012", "Shelter", null, "22 Anna Salai, Maraimalai Nagar", 12.7957, 80.0242, "4.7");
+        User hope = user(Role.NGO, "Annadhanam Seva Trust", "9840100003", "Community kitchen", null, "14 GST Road, Guduvanchery", 12.8452, 80.0601, "4.9");
+        User littleHearts = user(Role.NGO, "Asha Deepam Children's Home", "9840100011", "Children's home", null, "7 Church Street, Tambaram West", 12.9246, 80.1103, "4.8");
+        User annai = user(Role.NGO, "Karunai Illam Shelter", "9840100012", "Shelter", null, "22 Anna Salai, Maraimalai Nagar", 12.7957, 80.0242, "4.7");
 
         User kalyan = user(Role.DONOR, "Kalyan Mahal", "9840100001", "Event venue", null, "12 Rajaji Street, Kattankulathur", 12.8160, 80.0420, "4.8");
         User annapoorna = user(Role.DONOR, "Hotel Annapoorna", "9840100005", "Restaurant", null, "88 GST Road, Guduvanchery", 12.8476, 80.0623, "4.7");
-        User srmMess = user(Role.DONOR, "SRM Hostel Mess", "9840100006", "Hostel", null, "SRM Nagar, Potheri", 12.8231, 80.0430, "4.6");
+        User srmMess = user(Role.DONOR, "SRM Mess", "9840100006", "Hostel", null, "SRM Nagar, Potheri", 12.8231, 80.0430, "4.6");
         User spiceRoute = user(Role.DONOR, "Spice Route", "9840100007", "Restaurant", null, "3 Station Road, Maraimalai Nagar", 12.7915, 80.0250, "4.8");
         User sunrise = user(Role.DONOR, "Sunrise Bakery", "9840100008", "Bakery", null, "21 Main Road, Urapakkam", 12.8635, 80.0688, "4.9");
         User greenBasket = user(Role.DONOR, "Green Basket", "9840100009", "Grocery store", null, "5 Vandalur Road, Nandivaram", 12.8510, 80.0705, "4.7");
         User techPark = user(Role.DONOR, "TechPark Cafeteria", "9840100010", "Corporate cafeteria", null, "Estancia IT Park, Vallancherry", 12.8335, 80.0505, "4.8");
         User meena = user(Role.DONOR, "Meena's Kitchen", "9840100013", "Home kitchen", null, "9 Lakshmi Nagar, Kattankulathur", 12.8105, 80.0385, "5.0");
 
-        User krrish = user(Role.VOLUNTEER, "Krrish Pandey", "9840100002", "Student", "Scooter", "SRM Nagar, Potheri", 12.8231, 80.0442, "4.9");
+        User krrish = user(Role.VOLUNTEER, "Divit Periwal", "9840100002", "Student", "Scooter", "SRM Nagar, Potheri", 12.8231, 80.0442, "4.9");
         User ravi = user(Role.VOLUNTEER, "Ravi Kumar", "9840100004", "Delivery rider", "Motorbike", "Gandhi Road, Guduvanchery", 12.8440, 80.0580, "4.9");
-        User priya = user(Role.VOLUNTEER, "Priya S.", "9840100014", "Student", "Scooter", "Lake View Road, Urapakkam", 12.8650, 80.0690, "4.8");
-        User arjun = user(Role.VOLUNTEER, "Arjun M.", "9840100015", "Student", "Bicycle", "Thiru Vi Ka Street, Maraimalai Nagar", 12.7960, 80.0270, "4.7");
-        User nithya = user(Role.VOLUNTEER, "Nithya V.", "9840100016", "Teacher", "Scooter", "Kamaraj Street, Vandalur", 12.8920, 80.0810, "4.8");
+        User priya = user(Role.VOLUNTEER, "Priya Subramanian", "9840100014", "Student", "Scooter", "Lake View Road, Urapakkam", 12.8650, 80.0690, "4.8");
+        User arjun = user(Role.VOLUNTEER, "Arjun Menon", "9840100015", "Student", "Bicycle", "Thiru Vi Ka Street, Maraimalai Nagar", 12.7960, 80.0270, "4.7");
+        User nithya = user(Role.VOLUNTEER, "Nithya Venkatesan", "9840100016", "Teacher", "Scooter", "Kamaraj Street, Vandalur", 12.8920, 80.0810, "4.8");
         krrish.setDropNgo(hope);
 
         seedAvailable(now, annapoorna, spiceRoute, srmMess, meena, kalyan, techPark, sunrise, greenBasket);
@@ -139,7 +139,7 @@ public class DataSeeder implements ApplicationRunner {
                 List.of(hope, annai, littleHearts), new double[] {0.5, 0.3, 0.2});
 
         activities.saveAll(feed);
-        log.info("Seeded demo data: {} users, {} donations, {} activities", users.count(), donations.count(), feed.size());
+        log.info("Seeded data: {} users, {} donations, {} activities", users.count(), donations.count(), feed.size());
     }
 
     private void seedAvailable(OffsetDateTime now, User annapoorna, User spiceRoute, User srmMess, User meena, User kalyan,
@@ -159,7 +159,7 @@ public class DataSeeder implements ApplicationRunner {
         available(now, techPark, "Veg meals", Diet.VEG, Category.COOKED, 45, Unit.SERVINGS, 220, "Lunch counter on the ground floor");
     }
 
-    // Keep the demo feed alive across restarts: repost fresh listings once most have expired
+    // Keep the feed alive across restarts: repost fresh listings once most have expired
     private void topUpFeed(OffsetDateTime now) {
         if (donations.findByStatusAndPickupUntilAfter(Status.AVAILABLE, now).size() + donations.findByStatusAndPickupUntilAfter(Status.ACCEPTED, now).size() >= 5) {
             return;
@@ -171,7 +171,7 @@ public class DataSeeder implements ApplicationRunner {
         }
         seedAvailable(now, donors.get(0), donors.get(1), donors.get(2), donors.get(3), donors.get(4), donors.get(5), donors.get(6), donors.get(7));
         activities.saveAll(feed);
-        log.info("Topped up the demo feed with fresh listings");
+        log.info("Topped up the feed with fresh listings");
     }
 
     private void available(OffsetDateTime now, User donor, String title, Diet diet, Category category, int qty, Unit unit,

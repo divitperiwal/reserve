@@ -1,21 +1,12 @@
 import { useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
-import { Bike, Building2, Store, type LucideIcon } from 'lucide-react';
-import { Group, LanguageSwitch, Logo, Row, Segmented, Sheet, useToast } from '../../components/ui';
-import { api } from '../../lib/api';
+import { LanguageSwitch, Logo, Segmented } from '../../components/ui';
 import { homeFor, useAuth } from '../../lib/auth';
 import { useT } from '../../lib/i18n';
-import type { Role } from '../../lib/types';
-import { parseRole, readError, useFinishAuth } from './authUtils';
+import { parseRole } from './authUtils';
 import { SignIn } from './SignIn';
 import { SignUp } from './SignUp';
 import s from './AuthPage.module.css';
-
-const demos: { role: Role; phone: string; name: string; sub: string; icon: LucideIcon }[] = [
-  { role: 'DONOR', phone: '9840100001', name: 'Donor', sub: 'Post surplus food', icon: Store },
-  { role: 'VOLUNTEER', phone: '9840100002', name: 'Volunteer', sub: 'Claim and deliver pickups', icon: Bike },
-  { role: 'NGO', phone: '9840100003', name: 'NGO', sub: 'Receive deliveries', icon: Building2 },
-];
 
 const mosaic = ['biryani', 'idli', 'bread', 'meals', 'paneer', 'vegetables', 'curd-rice', 'cake', 'chapati'];
 
@@ -60,7 +51,6 @@ export default function AuthPage() {
   const [params] = useSearchParams();
   const initialRole = parseRole(params.get('role'));
   const [tab, setTab] = useState<'in' | 'up'>(initialRole ? 'up' : 'in');
-  const [demoOpen, setDemoOpen] = useState(false);
 
   if (loading) return null;
   if (user) return <Navigate to={homeFor(user.role)} replace />;
@@ -87,54 +77,12 @@ export default function AuthPage() {
             ]}
           />
           {tab === 'in' ? <SignIn /> : <SignUp initialRole={initialRole} />}
-          <button type="button" className={s.demo} onClick={() => setDemoOpen(true)}>
-            {t('Try a demo account')}
-          </button>
           <a className={s.credit} href="/food/credits.html" target="_blank" rel="noreferrer">
             {t('Food photos from Wikimedia Commons')}
           </a>
         </div>
       </main>
       <BrandPanel />
-      <DemoSheet open={demoOpen} onClose={() => setDemoOpen(false)} />
     </div>
-  );
-}
-
-function DemoSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const finish = useFinishAuth();
-  const toast = useToast();
-  const t = useT();
-  const [busy, setBusy] = useState<Role | null>(null);
-
-  const use = async (role: Role, phone: string) => {
-    setBusy(role);
-    try {
-      finish(await api.login(phone, 'reserve123'));
-    } catch (err) {
-      toast(readError(err, t).message ?? t('Could not sign in'), { error: true });
-      setBusy(null);
-    }
-  };
-
-  return (
-    <Sheet open={open} onClose={onClose} title={t('Demo accounts')}>
-      <p className={s.sheetLead}>{t('Explore ReServe from each side. Nothing you do here affects real pickups.')}</p>
-      <Group>
-        {demos.map(({ role, phone, name, sub, icon: Icon }) => (
-          <Row
-            key={role}
-            leading={
-              <span className={s.demoIcon}>
-                <Icon size={20} strokeWidth={1.75} aria-hidden />
-              </span>
-            }
-            title={t(name)}
-            subtitle={t(busy === role ? 'Signing in' : sub)}
-            onClick={() => !busy && use(role, phone)}
-          />
-        ))}
-      </Group>
-    </Sheet>
   );
 }

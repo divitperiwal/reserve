@@ -29,8 +29,8 @@ On first start the backend seeds demo data around Tambaram. All demo passwords a
 | Role | Mobile | Name |
 | --- | --- | --- |
 | Donor | 9840100001 | Kalyan Mahal |
-| Volunteer | 9840100002 | Krrish Pandey |
-| NGO | 9840100003 | Hope Kitchen Trust |
+| Volunteer | 9840100002 | Divit Periwal |
+| NGO | 9840100003 | Annadhanam Seva Trust |
 | Volunteer | 9840100004 | Ravi Kumar |
 
 OTP sign-in runs in dev mode: the code is printed in the backend log and shown in the UI.
