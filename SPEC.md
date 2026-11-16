@@ -5,7 +5,7 @@ Food-donation coordinator. Donors post surplus food, an NGO kitchen accepts what
 ## Stack
 
 - `backend/`: Java 21, Spring Boot 3.3, Maven, Spring Web, Spring Data JPA, Spring Security (stateless JWT via jjwt 0.12), Flyway, PostgreSQL, Bean Validation. Port **8080**.
-- `frontend/`: React 19 + TypeScript + Vite, react-router-dom 7, CSS Modules + CSS variables (no Tailwind), lucide-react icons, react-leaflet 5 maps. Port **5173**, `/api` proxied to 8080.
+- `frontend/`: React 19 + TypeScript + Vite, react-router-dom 7, CSS Modules + CSS variables (no Tailwind), lucide-react icons, react-leaflet 5 maps, `qrcode` and `jsqr` for handover QR codes. Port **5173**, `/api` proxied to 8080.
 - `docker-compose.yml`: Postgres 16, db `reserve`, user `reserve`, password `reserve`, port 5432.
 - Live updates: **SSE** (`GET /api/stream`). Volunteer location: browser `watchPosition` → `POST /api/donations/{id}/location` every ~5s.
 
@@ -84,6 +84,7 @@ Errors: `{ "message": string, "fields"?: Record<string,string> }` with 400/401/4
 - `POST /api/donations/{id}/confirm-delivery` (NGO target) `{code}` → `Donation`
 - `POST /api/donations/{id}/location` (assigned VOLUNTEER, CLAIMED or PICKED_UP) `{lat, lng}` → 204
 - `GET /api/donations/{id}/route` (parties) → `{lat, lng, at}[]`
+- `GET /api/donations/{id}/nearby-volunteers` (the donor of that donation) → `{count: number}`, on-duty volunteers within 7 km of the pickup
 
 ### Uploads
 - `POST /api/uploads` (DONOR, multipart field `file`, JPG/PNG/WEBP ≤ 5 MB) → `{url: "/api/uploads/<uuid>.jpg"}`; stored on disk under `app.upload-dir` (default `./uploads`).
@@ -119,7 +120,7 @@ Configured by `app.push.public-key`, `app.push.private-key`, `app.push.subject` 
 - `GET /api/stats/me` → `MyStats`
 - `GET /api/stats/dashboard?days=7|30` (NGO) → `DashboardStats`
 - `GET /api/stats/leaderboard?days=30` (public, `days` 1 to 90) → `Leaderboard`, delivered donations in the period, top 10 volunteers and donors by meals
-- `GET /api/stats/surplus?days=56` (NGO, `days` 7 to 90) → `SurplusMap`: delivered and expired donations as map points plus a forecast of the 6 expected donor slots with the most meals that fall within the next 7 days, soonest first
+- `GET /api/stats/surplus?days=56` (NGO, `days` 7 to 90) → `SurplusMap`: delivered and expired donations as map points plus a forecast of the 6 expected donor slots with the most meals that fall within the next 7 days, soonest first. A slot is one donor on one weekday in a 3 hour window (`from` to `until` is its next occurrence in `app.zone`); it needs posts in at least 2 of the last 8 weeks, and `expectedMeals` is the meals in those posts divided by the weeks seen
 - `GET /api/activity?limit=20` (any auth) → `Activity[]`
 - `GET /api/export.csv?days=7|30` (NGO, token may come as `?token=`) → `text/csv`
 
@@ -163,6 +164,7 @@ interface MyStats { monthLabel: string; pickups: number; meals: number; rank?: n
   live?: number; nextBadge?: { name: string; current: number; target: number };
   allTime: { count: number; meals: number; foodKg: number; co2Kg: number; since: string /* user createdAt */ };
   earnedBadges: string[] /* volunteer: badges reached this month; empty for other roles */ }
+interface NearbyVolunteers { count: number }
 interface Leaderboard { days: number; meals: number; foodKg: number; co2Kg: number;
   volunteers: { id: number; name: string; initials: string; pickups: number; meals: number; badge?: string }[];
   donors: { id: number; name: string; initials: string; donations: number; meals: number }[] }
@@ -183,6 +185,17 @@ interface Activity { id: number; type: 'POSTED' | 'ACCEPTED' | 'CLAIMED' | 'PICK
 ```
 
 Timestamps are ISO-8601 with offset (`OffsetDateTime`). JSON field names exactly as above (camelCase).
+
+## Client features (frontend only, no extra endpoints)
+
+- **Rescue risk** (`lib/risk.ts`, `RiskBadge`). `total` is the minutes still needed: to the donor, 10 for handover, to the kitchen, 10 for handover (only the kitchen leg and handover once `PICKED_UP`). A leg with no known start uses 15 minutes; otherwise it is the straight-line distance at 18 km/h. `spare = bestBefore - (now + total)`. Level `AT_RISK` if `spare < 0` or the donor cannot be reached before `pickupUntil`, `TIGHT` if `spare < 30` minutes, else `SAFE`. Shown as "Safe, 45 min to spare", "Tight, 12 min to spare" or "At risk" on the kitchen feed, the volunteer pickup views and `/track/:id`. For an `AVAILABLE` donation the kitchen is the viewing NGO.
+- **Road routing** (`lib/route.ts`). `GET {VITE_OSRM_URL}/route/v1/driving/{lng,lat;lng,lat}?overview=full&geometries=geojson`, default host `https://router.project-osrm.org`. 6 second timeout, results cached per pair of points, refetched only when an end moves more than 50 m. The map leg, the ETA and the "Simulate ride" movement follow the road path; on any failure they fall back to a straight line at 18 km/h. Simulation moves 0.2 km every 3 seconds and is offered when GPS is denied, unavailable or more than 30 km from the pickup.
+- **QR handover** (`features/tracking`). The volunteer's active pickup shows a QR code beside the 4-digit code. The QR text is `reserve:<donationId>:<code>`. The donor's "Confirm pickup" and the NGO's "Confirm delivery" sheets accept the typed digits or a camera scan (`jsqr`); a scan for another donation, or text in another format, is rejected. The code is still verified by the existing `confirm-pickup` and `confirm-delivery` endpoints.
+- **AI autofill** (donor post form). "Fill from photo" uploads through `POST /api/uploads` then calls `POST /api/ai/draft` with `photoUrl`; "Describe it" uses the browser speech recognition (English, Tamil or Hindi) and sends the transcript as `text`. Hidden when `GET /api/ai/status` says disabled. `DonationDraft` minutes are applied relative to now and the donor reviews every field before posting.
+- **Impact and sharing.** `/leaderboard` (public) shows `Leaderboard` for 30 days. `/certificate` (any signed-in role) prints the all-time `MyStats.allTime` with the browser's Save as PDF. Impact cards link to it from the volunteer impact page and the donor and NGO profiles.
+- **NGO map and insights.** The map has a History toggle (30 or 56 days) drawing `SurplusMap.points`, green for `DELIVERED` and red for `EXPIRED`, sized by kg. Insights lists the `SurplusMap.forecast` as "Expected surplus".
+- **Languages** (`lib/i18n.tsx`). English, Tamil (`ta`) and Hindi (`hi`). Strings are looked up by their English text in `src/locales/ta.ts` and `hi.ts`, falling back to English; the choice is kept in `localStorage` key `reserve.lang` and sets `<html lang>`. A test fails when a key used in the code is missing from a dictionary.
+- **Routes added.** `/leaderboard` (public) and `/certificate` (DONOR, NGO, VOLUNTEER), beside the screens listed below.
 
 ## Design system (frontend), v3: white, Apple, basil
 
