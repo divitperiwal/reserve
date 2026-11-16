@@ -125,6 +125,8 @@ export interface MyStats {
   donations?: number;
   live?: number;
   nextBadge?: { name: string; current: number; target: number };
+  allTime: { count: number; meals: number; foodKg: number; co2Kg: number; since: string };
+  earnedBadges: string[];
 }
 
 export interface DashboardStats {
@@ -141,6 +143,34 @@ export interface DashboardStats {
   categories: { category: Category; pct: number }[];
   topVolunteers: { id: number; name: string; initials: string; pickups: number; meals: number }[];
   co2Kg: number;
+}
+
+export interface Leaderboard {
+  days: number;
+  meals: number;
+  foodKg: number;
+  co2Kg: number;
+  volunteers: { id: number; name: string; initials: string; pickups: number; meals: number; badge?: string }[];
+  donors: { id: number; name: string; initials: string; donations: number; meals: number }[];
+}
+
+export interface SurplusForecastEntry {
+  donorId: number;
+  donorName: string;
+  address: string;
+  lat: number;
+  lng: number;
+  from: string;
+  until: string;
+  expectedMeals: number;
+  weeksSeen: number;
+  weeksLooked: number;
+}
+
+export interface SurplusMap {
+  days: number;
+  points: { lat: number; lng: number; kg: number; status: Status }[];
+  forecast: SurplusForecastEntry[];
 }
 
 export interface Activity {

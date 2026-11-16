@@ -91,6 +91,8 @@ Errors: `{ "message": string, "fields"?: Record<string,string> }` with 400/401/4
 - `GET /api/stats/public` (public) → `PublicStats`
 - `GET /api/stats/me` → `MyStats`
 - `GET /api/stats/dashboard?days=7|30` (NGO) → `DashboardStats`
+- `GET /api/stats/leaderboard?days=30` (public, `days` 1 to 90) → `Leaderboard`, delivered donations in the period, top 10 volunteers and donors by meals
+- `GET /api/stats/surplus?days=56` (NGO, `days` 7 to 90) → `SurplusMap`: delivered and expired donations as map points plus a forecast of the next 6 expected donor slots
 - `GET /api/activity?limit=20` (any auth) → `Activity[]`
 - `GET /api/export.csv?days=7|30` (NGO, token may come as `?token=`) → `text/csv`
 
@@ -130,7 +132,16 @@ interface CreateDonation { title: string; diet: Diet; category: Category; quanti
 interface PublicStats { mealsRescued: number; foodKg: number; co2Kg: number; activeVolunteers: number;
   partnerNgos: number; livePickups: number; medianPickupMinutes: number; deliveredBeforeExpiryPct: number }
 interface MyStats { monthLabel: string; pickups: number; meals: number; rank?: number; donations?: number;
-  live?: number; nextBadge?: { name: string; current: number; target: number } }
+  live?: number; nextBadge?: { name: string; current: number; target: number };
+  allTime: { count: number; meals: number; foodKg: number; co2Kg: number; since: string /* user createdAt */ };
+  earnedBadges: string[] /* volunteer: badges reached this month; empty for other roles */ }
+interface Leaderboard { days: number; meals: number; foodKg: number; co2Kg: number;
+  volunteers: { id: number; name: string; initials: string; pickups: number; meals: number; badge?: string }[];
+  donors: { id: number; name: string; initials: string; donations: number; meals: number }[] }
+interface SurplusForecastEntry { donorId: number; donorName: string; address: string; lat: number; lng: number;
+  from: string; until: string; expectedMeals: number; weeksSeen: number; weeksLooked: number /* always 8 */ }
+interface SurplusMap { days: number; points: { lat: number; lng: number; kg: number; status: Status }[];
+  forecast: SurplusForecastEntry[] }
 interface DashboardStats { days: number; mealsRescued: number; mealsDeltaPct: number; foodKg: number;
   foodDeltaKg: number; medianPickupMinutes: number; medianDeltaMinutes: number; deliveredBeforeExpiryPct: number;
   perDay: { date: string; meals: number }[]; funnel: { posted: number; claimed: number; pickedUp: number;

@@ -5,10 +5,12 @@ import type {
   DashboardStats,
   Donation,
   GeoPoint,
+  Leaderboard,
   MyStats,
   NgoRef,
   PublicStats,
   Role,
+  SurplusMap,
   User,
 } from './types';
 
@@ -135,6 +137,8 @@ export const api = {
   publicStats: () => request<PublicStats>('GET', '/stats/public'),
   myStats: () => request<MyStats>('GET', '/stats/me'),
   dashboard: (days: 7 | 30) => request<DashboardStats>('GET', `/stats/dashboard?days=${days}`),
+  leaderboard: (days = 30) => request<Leaderboard>('GET', `/stats/leaderboard?days=${days}`),
+  surplus: (days = 56) => request<SurplusMap>('GET', `/stats/surplus?days=${days}`),
   activity: (limit = 20) => request<Activity[]>('GET', `/activity?limit=${limit}`),
   exportUrl: (days: 7 | 30) => `/api/export.csv${qs({ days, token: tokenStore.get() })}`,
   streamUrl: () => `/api/stream${qs({ token: tokenStore.get() })}`,

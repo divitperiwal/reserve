@@ -38,7 +38,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/stats/public", "/api/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/stats/public", "/api/stats/leaderboard", "/api/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/donations/feed").hasAnyRole("VOLUNTEER", "NGO")
                         .requestMatchers(HttpMethod.POST, "/api/donations", "/api/uploads").hasRole("DONOR")
                         .requestMatchers(HttpMethod.DELETE, "/api/donations/*").hasRole("DONOR")
@@ -48,7 +48,7 @@ public class SecurityConfig {
                                 "/api/donations/*/withdraw").hasRole("NGO")
                         .requestMatchers(HttpMethod.POST, "/api/donations/*/claim", "/api/donations/*/release",
                                 "/api/donations/*/location").hasRole("VOLUNTEER")
-                        .requestMatchers(HttpMethod.GET, "/api/stats/dashboard", "/api/export.csv").hasRole("NGO")
+                        .requestMatchers(HttpMethod.GET, "/api/stats/dashboard", "/api/stats/surplus", "/api/export.csv").hasRole("NGO")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint((req, res, ex) -> writeError(res, mapper, 401, "Please sign in to continue"))
