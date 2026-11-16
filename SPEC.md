@@ -49,6 +49,8 @@ activities(id bigserial pk, type varchar, actor_id fk null, donation_id fk, crea
 otp_codes(phone pk, code, expires_at)
 ```
 
+Later migrations: `V4__donation_source.sql` adds `donations.source varchar(16) not null default 'APP'` (`APP` or `VOICE`).
+
 Seed (Java `DataSeeder`, runs when users table is empty, times relative to now) around Tambaram/Chengalpattu (lat ~12.82–12.93, lng ~80.04–80.13): NGOs Hope Kitchen Trust, Little Hearts Home, Annai Shelter; donors Kalyan Mahal (event venue), Hotel Annapoorna, SRM Hostel Mess, Spice Route, Sunrise Bakery, Green Basket, TechPark Cafeteria, a home kitchen; volunteers Ravi Kumar, Priya S., Arjun M., Nithya V., Krrish Pandey. ~9 available donations across urgencies, 1 active claim (Veg biryani by Ravi to Hope Kitchen, PICKED_UP with a few location pings), eight weeks of patterned history from a fixed `Random(42)` (Kalyan Mahal weekend evenings, SRM Hostel Mess weekday afternoons, Sunrise Bakery nightly, TechPark weekday afternoons, Hotel Annapoorna Friday and Saturday late evenings, a few scattered posts; about 12% expired, the rest delivered) for charts, the surplus forecast and the heatmap, plus a few recent expired. All seeded passwords `reserve123`. Demo logins: donor `9840100001` (Kalyan Mahal), volunteer `9840100002` (Krrish Pandey), NGO `9840100003` (Hope Kitchen Trust), volunteer Ravi `9840100004`.
 
 ## REST API (JSON, `Authorization: Bearer <jwt>` except where public)
@@ -91,6 +93,16 @@ Errors: `{ "message": string, "fields"?: Record<string,string> }` with 400/401/4
 - `GET /api/ai/status` (DONOR) → `{enabled: boolean}`; `enabled` is false unless `ANTHROPIC_API_KEY` is set.
 - `POST /api/ai/draft` (DONOR) `{photoUrl?, text?}` with exactly one set (else 400; `photoUrl` must be an uploaded photo, `text` up to 2000 characters, Tamil, Hindi or English) → `DonationDraft`. Every field may be missing, minutes count from now and are clamped to 0 to 2880. 404 `AI drafting is off` when no key is set; 422 `Couldn't read that, please fill the form yourself` when the model refuses, times out or fails; 429 after 30 drafts per donor per hour (per instance, in memory).
 
+### Voice hotline (Bolna)
+Public to Spring Security; every request must carry header `X-Voice-Secret` equal to `app.voice.secret` (`VOICE_SECRET`), compared in constant time. Secret unset: both endpoints 404 `Not found`. Missing or wrong header: 401 `Wrong voice secret`. Error messages are short sentences the agent can read aloud. Setup in `docs/bolna.md`.
+- `POST /api/voice/lookup` `{phone}` → `{registered: boolean, name?, address?}`; `registered` only for a DONOR account.
+- `POST /api/voice/donations` `{phone, title, diet, category?, quantity, unit?, pickupFrom?, pickupUntil, bestBefore, covered, safeTemp, noReturns, allergensNoted, note?}` → `{code, message}`, for example `{"code":"RS-2481","message":"Done. RS-2481, 50 servings of veg biryani, is live. Pickup by 9 pm."}`.
+  - `phone`: non-digits stripped, last 10 digits kept (drops `+91` or a leading `0`); must belong to a DONOR, else 404 `This number is not registered as a donor on ReServe`.
+  - `diet`, `category`, `unit` are case-insensitive enum names (`veg`, `non veg`); `category` defaults to `COOKED`, `unit` to `SERVINGS`. Numbers and booleans may also arrive as strings (`"50"`, `"true"`).
+  - Times are `+90` (minutes from now) or `21:00` (24 hour clock in `app.zone`, today, or tomorrow if already past); `pickupFrom` defaults to now. Otherwise 400 naming the field.
+  - All four safety booleans must be true, else 400 `We can only take food that is covered, kept at a safe temperature, never served, and has allergens noted`.
+  - Address and lat/lng come from the donor's profile. Same validation, POSTED activity and `donation` broadcast as `POST /api/donations`, with `source: VOICE`; a validation failure returns its first field message as `message`.
+
 ### Stats & activity
 - `GET /api/stats/public` (public) → `PublicStats`
 - `GET /api/stats/me` → `MyStats`
@@ -115,6 +127,7 @@ type Diet = 'VEG' | 'NON_VEG';
 type Category = 'COOKED' | 'BAKERY' | 'FRUIT_VEG' | 'PACKAGED' | 'RAW';
 type Unit = 'SERVINGS' | 'KG' | 'PACKS';
 type Status = 'AVAILABLE' | 'ACCEPTED' | 'CLAIMED' | 'PICKED_UP' | 'DELIVERED' | 'EXPIRED' | 'CANCELLED';
+type Source = 'APP' | 'VOICE';
 type SafetyCheck = 'COVERED' | 'SAFE_TEMP' | 'NO_RETURNS' | 'ALLERGENS_NOTED';
 
 interface NgoRef { id: number; name: string; address: string; lat: number; lng: number }
@@ -126,7 +139,7 @@ interface PersonRef { id: number; name: string; initials: string; phone: string;
 interface Donation { id: number; code: string /* "RS-2481" */; title: string; diet: Diet; category: Category;
   quantity: number; unit: Unit; weightKg: number; containers?: number; photoUrl?: string; note?: string;
   address: string; lat: number; lng: number; preparedAt?: string; bestBefore: string; pickupFrom: string;
-  pickupUntil: string; safetyChecks: SafetyCheck[]; status: Status; donor: PersonRef; volunteer?: PersonRef;
+  pickupUntil: string; safetyChecks: SafetyCheck[]; status: Status; source: Source; donor: PersonRef; volunteer?: PersonRef;
   ngo?: NgoRef; claimedAt?: string; pickedUpAt?: string; deliveredAt?: string; createdAt: string;
   distanceKm?: number; meals: number; pickupCode?: string; dropCode?: string;
   lastLocation?: { lat: number; lng: number; at: string } }

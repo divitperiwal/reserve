@@ -96,8 +96,12 @@ public class DonationService {
 
     @Transactional
     public DonationDto create(AuthUser me, DonationRequests.Create req) {
+        return create(users.get(me.id()), req, Source.APP);
+    }
+
+    @Transactional
+    public DonationDto create(User donor, DonationRequests.Create req, Source source) {
         validate(req);
-        User donor = users.get(me.id());
         Donation d = new Donation(donor, req.title().trim(), req.diet(), req.category(), req.quantity(), req.unit());
         if (req.weightKg() != null) d.setWeightKg(req.weightKg());
         d.setContainers(req.containers());
@@ -109,6 +113,7 @@ public class DonationService {
         d.setPickupFrom(req.pickupFrom());
         d.setPickupUntil(req.pickupUntil());
         d.setSafetyCheckList(req.safetyChecks());
+        d.setSource(source);
         d.setPickupCode(handoverCode());
         d.setDropCode(handoverCode());
         donations.save(d);

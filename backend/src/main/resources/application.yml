@@ -39,4 +39,6 @@ app:
   ai:
     api-key: ${ANTHROPIC_API_KEY:}
     model: ${AI_MODEL:claude-opus-5-5}
+  voice:
+    secret: ${VOICE_SECRET:}
   cors-origin: ${APP_CORS_ORIGINS:http://localhost:*,http://127.0.0.1:*}

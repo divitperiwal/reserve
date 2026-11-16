@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Moon, Radar } from 'lucide-react';
-import { Avatar, Button, ButtonLink, cx, DietMark, RiskBadge, Skeleton } from '../../components/ui';
+import { Avatar, Button, ButtonLink, cx, DietMark, PhoneBadge, RiskBadge, Skeleton } from '../../components/ui';
 import { FoodThumb } from '../../components/dash';
 import { LiveMap, type Pin } from '../../components/map/LiveMap';
 import { haversineKm, km, num, qty } from '../../lib/format';
@@ -161,6 +161,7 @@ function Offer({ d, drop, me, left, busy, onAccept, onSkip, onDetails }: {
       {drop && <p className={t.askedBy}>{drop.name} asked for this</p>}
 
       <RiskBadge d={d} from={me} kitchen={drop} />
+      <PhoneBadge d={d} />
 
       <button type="button" className={t.food} onClick={onDetails}>
         <FoodThumb d={d} size={56} />
@@ -228,6 +229,7 @@ function ActiveTask({ d, me }: { d: Donation; me: LatLng }) {
         </p>
       </div>
       <RiskBadge d={d} from={from} />
+      <PhoneBadge d={d} />
 
       <div className={t.food}>
         <FoodThumb d={d} size={48} />
