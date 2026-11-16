@@ -103,7 +103,7 @@ export function RiskBadge({ d, ...opts }: { d: Donation } & Omit<RiskOpts, 'now'
 export function PhoneBadge({ d }: { d: Pick<Donation, 'source'> }) {
   if (d.source !== 'VOICE') return null;
   return (
-    <Badge className={s.risk}>
+    <Badge className={s.phone}>
       <Phone size={12} strokeWidth={2} aria-hidden />
       By phone
     </Badge>

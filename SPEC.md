@@ -94,14 +94,14 @@ Errors: `{ "message": string, "fields"?: Record<string,string> }` with 400/401/4
 - `POST /api/ai/draft` (DONOR) `{photoUrl?, text?}` with exactly one set (else 400; `photoUrl` must be an uploaded photo, `text` up to 2000 characters, Tamil, Hindi or English) → `DonationDraft`. Every field may be missing, minutes count from now and are clamped to 0 to 2880. 404 `AI drafting is off` when no key is set; 422 `Couldn't read that, please fill the form yourself` when the model refuses, times out or fails; 429 after 30 drafts per donor per hour (per instance, in memory).
 
 ### Voice hotline (Bolna)
-Public to Spring Security; every request must carry header `X-Voice-Secret` equal to `app.voice.secret` (`VOICE_SECRET`), compared in constant time. Secret unset: both endpoints 404 `Not found`. Missing or wrong header: 401 `Wrong voice secret`. Error messages are short sentences the agent can read aloud. Setup in `docs/bolna.md`.
+Public to Spring Security; every request must carry header `X-Voice-Secret` equal to `app.voice.secret` (`VOICE_SECRET`), compared in constant time. Secret unset: both endpoints 404 `Not found`. Missing or wrong header: 401 `Wrong voice secret`. The secret is checked before the body is parsed. A body that is not valid JSON gets 400 `Sorry, I could not read that request`. Error messages are short sentences the agent can read aloud. Setup in `docs/bolna.md`.
 - `POST /api/voice/lookup` `{phone}` → `{registered: boolean, name?, address?}`; `registered` only for a DONOR account.
 - `POST /api/voice/donations` `{phone, title, diet, category?, quantity, unit?, pickupFrom?, pickupUntil, bestBefore, covered, safeTemp, noReturns, allergensNoted, note?}` → `{code, message}`, for example `{"code":"RS-2481","message":"Done. RS-2481, 50 servings of veg biryani, is live. Pickup by 9 pm."}`.
   - `phone`: non-digits stripped, last 10 digits kept (drops `+91` or a leading `0`); must belong to a DONOR, else 404 `This number is not registered as a donor on ReServe`.
-  - `diet`, `category`, `unit` are case-insensitive enum names (`veg`, `non veg`); `category` defaults to `COOKED`, `unit` to `SERVINGS`. Numbers and booleans may also arrive as strings (`"50"`, `"true"`).
+  - `diet`, `category`, `unit` are case-insensitive enum names (`veg`, `non veg`); `category` defaults to `COOKED`, `unit` to `SERVINGS`. `quantity` may arrive as a string (`"50"`); one that is not a whole number gives 400 `Tell me how much food there is, as a whole number`. Optional fields sent as `""`, `None` or `null` count as missing.
   - Times are `+90` (minutes from now) or `21:00` (24 hour clock in `app.zone`, today, or tomorrow if already past); `pickupFrom` defaults to now. Otherwise 400 naming the field.
-  - All four safety booleans must be true, else 400 `We can only take food that is covered, kept at a safe temperature, never served, and has allergens noted`.
-  - Address and lat/lng come from the donor's profile. Same validation, POSTED activity and `donation` broadcast as `POST /api/donations`, with `source: VOICE`; a validation failure returns its first field message as `message`.
+  - All four safety answers must be exactly true (JSON `true` or the text `"true"`, any case; `1`, `"yes"`, empty or missing do not count), else 400 `We can only take food that is covered, kept at a safe temperature, never served, and has allergens noted`.
+  - Address and lat/lng come from the donor's profile. The built request runs the same bean constraints and service validation, POSTED activity and `donation` broadcast as `POST /api/donations`, with `source: VOICE`; a validation failure returns its first field message as `message`.
 
 ### Stats & activity
 - `GET /api/stats/public` (public) → `PublicStats`

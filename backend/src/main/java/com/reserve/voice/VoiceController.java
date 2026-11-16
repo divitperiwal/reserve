@@ -16,17 +16,18 @@ public class VoiceController {
         this.voice = voice;
     }
 
+    // Bodies arrive raw so the secret is checked before any JSON is parsed
     @PostMapping("/lookup")
     public VoiceRequests.LookupResult lookup(@RequestHeader(value = "X-Voice-Secret", required = false) String secret,
-                                             @RequestBody VoiceRequests.Lookup req) {
+                                             @RequestBody(required = false) String body) {
         voice.checkSecret(secret);
-        return voice.lookup(req.phone());
+        return voice.lookup(voice.read(body, VoiceRequests.Lookup.class));
     }
 
     @PostMapping("/donations")
     public VoiceRequests.Posted donate(@RequestHeader(value = "X-Voice-Secret", required = false) String secret,
-                                       @RequestBody VoiceRequests.Donation req) {
+                                       @RequestBody(required = false) String body) {
         voice.checkSecret(secret);
-        return voice.post(req);
+        return voice.post(voice.read(body, VoiceRequests.Donation.class));
     }
 }

@@ -64,7 +64,7 @@ Bolna fills `{from_number}` (also written `{{from_number}}`) with the number tha
 
 ## 4. Add the two custom functions
 
-In the agent's Tools tab add two custom functions. Bolna requires `"key": "custom_task"`, and the names in `param` must match `parameters.properties` exactly (case-sensitive). `%(name)s` is replaced with the value the model collected. ReServe accepts numbers and booleans sent as strings (`"50"`, `"true"`), so every placeholder can use `%(name)s`.
+In the agent's Tools tab add two custom functions. Bolna requires `"key": "custom_task"`, and the names in `param` must match `parameters.properties` exactly (case-sensitive). `%(name)s` is replaced with the value the model collected. ReServe accepts `quantity` as a string (`"50"`) and a safety answer as JSON `true` or the text `"true"` in any case, so every placeholder can use `%(name)s`. Anything else, such as `1` or `yes`, counts as no.
 
 ### lookup_donor
 
@@ -161,9 +161,11 @@ Rules the backend enforces, each with a short sentence the agent can read back:
 | Problem | Status | Message |
 | --- | --- | --- |
 | Number not a donor | 404 | This number is not registered as a donor on ReServe |
-| A safety answer is not true | 400 | We can only take food that is covered, kept at a safe temperature, never served, and has allergens noted |
+| A safety answer is not exactly true | 400 | We can only take food that is covered, kept at a safe temperature, never served, and has allergens noted |
 | A time it cannot read | 400 | I did not catch the pickup end time. Use minutes from now like +90, or a clock time like 21:00 |
 | Pickup ends after best before | 400 | Pickup window must end by the best-before time |
+| Quantity is not a whole number | 400 | Tell me how much food there is, as a whole number |
+| Body is not valid JSON | 400 | Sorry, I could not read that request |
 | Wrong or missing secret | 401 | Wrong voice secret |
 | Hotline off (no secret set) | 404 | Not found |
 

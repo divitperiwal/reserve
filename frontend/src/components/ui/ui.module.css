@@ -142,6 +142,9 @@
 .risk {
   justify-self: start;
 }
+.phone {
+  justify-self: start;
+}
 .t-critical,
 .t-criticalSoft {
   background: var(--red-soft);
