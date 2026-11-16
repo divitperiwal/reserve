@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { LiveMap, type Pin } from '../../components/map/LiveMap';
+import { remainingPath, type RoadRoute } from '../../lib/route';
 import type { Donation, GeoPoint } from '../../lib/types';
 import { isActive, riderAt, type LatLng } from './geo';
 
@@ -30,7 +31,7 @@ function FitRoute({ points, fitKey }: { points: LatLng[]; fitKey: string }) {
   return null;
 }
 
-export function RouteMap({ d, trail, fallback }: { d: Donation; trail: GeoPoint[]; fallback?: LatLng | null }) {
+export function RouteMap({ d, trail, fallback, route }: { d: Donation; trail: GeoPoint[]; fallback?: LatLng | null; route?: RoadRoute | null }) {
   const moving = isActive(d.status);
   const rider = riderAt(d, trail) ?? (moving ? fallback ?? null : null);
   const ngo = d.ngo;
@@ -41,7 +42,10 @@ export function RouteMap({ d, trail, fallback }: { d: Donation; trail: GeoPoint[
 
   const covered = trail.map((p) => [p.lat, p.lng] as [number, number]);
   const remaining: [number, number][] = [];
-  if (moving && rider) {
+  if (moving && rider && route) {
+    remaining.push([rider.lat, rider.lng], ...remainingPath(route.path, rider).map((p) => [p.lat, p.lng] as [number, number]));
+    if (d.status === 'CLAIMED' && ngo) remaining.push([ngo.lat, ngo.lng]);
+  } else if (moving && rider) {
     remaining.push([rider.lat, rider.lng]);
     if (d.status === 'CLAIMED') remaining.push([d.lat, d.lng]);
     if (ngo) remaining.push([ngo.lat, ngo.lng]);

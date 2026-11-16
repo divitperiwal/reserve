@@ -1,4 +1,5 @@
 import { haversineKm } from '../../lib/format';
+import { remainingKm, type RoadRoute } from '../../lib/route';
 import type { Donation, GeoPoint, Status } from '../../lib/types';
 
 export interface LatLng {
@@ -36,16 +37,27 @@ export function riderAt(d: Donation, trail: GeoPoint[]): GeoPoint | null {
   return trail[trail.length - 1] ?? d.lastLocation ?? null;
 }
 
-// Distance and minutes from the rider to the next stop, plus how far along the current leg they are
-export function leg(d: Donation, trail: GeoPoint[], fallback?: LatLng | null) {
+// Where the current leg starts and ends, for road routing
+export function legEnds(d: Donation, trail: GeoPoint[], fallback?: LatLng | null): { from: LatLng; to: LatLng } | null {
+  if (!isActive(d.status)) return null;
+  const stop = nextStop(d);
+  const from = d.status === 'PICKED_UP' ? d : trail[0] ?? riderAt(d, trail) ?? fallback;
+  return stop && from ? { from: { lat: from.lat, lng: from.lng }, to: { lat: stop.lat, lng: stop.lng } } : null;
+}
+
+// Distance and minutes from the rider to the next stop, along the road when a route is known
+export function leg(d: Donation, trail: GeoPoint[], fallback?: LatLng | null, route?: RoadRoute | null) {
   const stop = nextStop(d);
   const from = riderAt(d, trail) ?? fallback ?? null;
   if (!stop || !from) return null;
-  const km = haversineKm(from, stop);
+  const straight = haversineKm(from, stop);
+  const road = route && route.km > 0 ? route : null;
+  const km = road ? remainingKm(road.path, from) : straight;
+  const min = road ? Math.max(1, Math.round((road.min * km) / road.km)) : etaMin(km);
   const start = d.status === 'PICKED_UP' ? { lat: d.lat, lng: d.lng } : trail[0] ?? from;
   const total = haversineKm(start, stop);
-  const progress = total > 0.01 ? Math.min(1, Math.max(0, 1 - km / total)) : km < 0.05 ? 1 : 0;
-  return { km, min: etaMin(km), progress, stop };
+  const progress = total > 0.01 ? Math.min(1, Math.max(0, 1 - straight / total)) : straight < 0.05 ? 1 : 0;
+  return { km, min, progress, stop };
 }
 
 export function routeKm(d: Donation) {

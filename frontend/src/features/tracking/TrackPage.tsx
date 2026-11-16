@@ -11,7 +11,7 @@ import { FlowSteps, flowStep } from './FlowSteps';
 import { isActive, leg } from './geo';
 import { MapStage } from './MapStage';
 import { RouteMap } from './RouteMap';
-import { useTracking } from './useTracking';
+import { useLegRoute, useTracking } from './useTracking';
 import s from './stage.module.css';
 
 const first = (name?: string) => name?.split(/\s+/)[0] ?? 'The volunteer';
@@ -43,6 +43,7 @@ export default function TrackPage() {
   const toast = useToast();
   const [codeOpen, setCodeOpen] = useState(false);
   const { donation: d, trail, error, update, retry } = useTracking(id);
+  const route = useLegRoute(d, trail);
 
   if (!user) return null;
   if (user.role === 'VOLUNTEER') return <Navigate to={`/volunteer/pickup/${id}`} replace />;
@@ -77,7 +78,7 @@ export default function TrackPage() {
 
   const isDonor = user.role === 'DONOR';
   const moving = isActive(d.status);
-  const eta = moving ? leg(d, trail) : null;
+  const eta = moving ? leg(d, trail, null, route) : null;
   const canConfirm = isDonor ? d.status === 'CLAIMED' : d.status === 'PICKED_UP';
 
   const confirm = async (code: string) => {
@@ -87,7 +88,7 @@ export default function TrackPage() {
   };
 
   return (
-    <MapStage map={<RouteMap d={d} trail={trail} />} onBack={back} backLabel="Back">
+    <MapStage map={<RouteMap d={d} trail={trail} route={route} />} onBack={back} backLabel="Back">
       {d.status === 'DELIVERED' ? (
         <div className={s.done}>
           <span className={s.doneIcon}>

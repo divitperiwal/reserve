@@ -9,7 +9,7 @@ import { CodeTiles } from '../tracking/codes';
 import { isActive, leg, nextStop } from '../tracking/geo';
 import { MapStage } from '../tracking/MapStage';
 import { RouteMap } from '../tracking/RouteMap';
-import { useTracking } from '../tracking/useTracking';
+import { useLegRoute, useTracking } from '../tracking/useTracking';
 import st from '../tracking/stage.module.css';
 import { useVolunteer } from './context';
 import { useLocationShare } from './hooks';
@@ -34,6 +34,7 @@ export default function ActivePickupPage() {
     }
     if (isActive(next)) setActive(full);
   });
+  const route = useLegRoute(d, trail);
   const share = useLocationShare(d, pushPoint);
   const back = () => navigate('/volunteer');
 
@@ -82,12 +83,12 @@ export default function ActivePickupPage() {
 
   const toDonor = d.status === 'CLAIMED';
   const stop = nextStop(d)!;
-  const eta = leg(d, trail);
+  const eta = leg(d, trail, null, route);
   const code = toDonor ? d.pickupCode : d.dropCode;
   const contact = toDonor ? d.donor.phone : undefined;
 
   return (
-    <MapStage map={<RouteMap d={d} trail={trail} />} onBack={back} backLabel="Pickups">
+    <MapStage map={<RouteMap d={d} trail={trail} route={route} />} onBack={back} backLabel="Pickups">
       <div className={st.head}>
         <h1 className={st.title}>{toDonor ? `Head to ${d.donor.name}` : `Deliver to ${stop.name}`}</h1>
         <p className={st.sub}>

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api';
+import { useRoadRoute } from '../../lib/route';
 import { useStream } from '../../lib/stream';
 import type { Donation, GeoPoint, Status } from '../../lib/types';
+import { legEnds } from './geo';
 
 // Stream payloads have codes stripped, so keep the ones we already know
 export function mergeDonation(prev: Donation | null, next: Donation): Donation {
@@ -82,4 +84,10 @@ export function useTracking(id: number, onStatus?: (next: Status, prev: Status, 
     pushPoint,
     retry: () => setAttempt((a) => a + 1),
   };
+}
+
+// Road route for the current leg, fetched once per leg rather than per ping
+export function useLegRoute(d: Donation | null, trail: GeoPoint[]) {
+  const ends = d ? legEnds(d, trail) : null;
+  return useRoadRoute(ends?.from ?? null, ends?.to ?? null);
 }
