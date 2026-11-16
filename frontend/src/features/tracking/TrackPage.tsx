@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Check, Phone } from 'lucide-react';
-import { Avatar, Button, Skeleton, useToast } from '../../components/ui';
+import { Avatar, Button, RiskBadge, Skeleton, useToast } from '../../components/ui';
 import { api } from '../../lib/api';
 import { homeFor, useAuth } from '../../lib/auth';
 import { qty } from '../../lib/format';
 import type { Donation } from '../../lib/types';
 import { CodeSheet } from './codes';
 import { FlowSteps, flowStep } from './FlowSteps';
-import { isActive, leg } from './geo';
+import { isActive, leg, riderAt } from './geo';
 import { MapStage } from './MapStage';
 import { RouteMap } from './RouteMap';
 import { useLegRoute, useTracking } from './useTracking';
@@ -118,6 +118,15 @@ export default function TrackPage() {
                 {eta.km.toFixed(1)} km to {eta.stop.name}
               </span>
             </div>
+          )}
+
+          {(moving || d.status === 'ACCEPTED') && (
+            <RiskBadge
+              d={d}
+              from={riderAt(d, trail)}
+              toDonorMin={d.status === 'CLAIMED' ? eta?.min : undefined}
+              toKitchenMin={d.status === 'PICKED_UP' ? eta?.min : undefined}
+            />
           )}
 
           {(moving || d.status === 'AVAILABLE' || d.status === 'ACCEPTED') && <FlowSteps step={flowStep(d)} />}

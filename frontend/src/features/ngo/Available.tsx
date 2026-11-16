@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Hourglass, Minus, Plus, Utensils } from 'lucide-react';
-import { Button, DietMark, EmptyState, Sheet, Skeleton, useToast } from '../../components/ui';
+import { Button, DietMark, EmptyState, RiskBadge, Sheet, Skeleton, useToast } from '../../components/ui';
 import { FoodThumb, SectionHead } from '../../components/dash';
 import { api, ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -64,6 +64,7 @@ export function AvailablePanel() {
   const now = useNow();
   const [pickedId, setPickedId] = useState<number | null>(null);
   const accepting = user?.acceptingFood ?? true;
+  const kitchen = useMemo(() => (user?.lat && user?.lng ? { lat: user.lat, lng: user.lng } : null), [user?.lat, user?.lng]);
   const list = items
     .filter((d) => +new Date(d.pickupUntil) > now)
     .sort((a, b) => +new Date(a.pickupUntil) - +new Date(b.pickupUntil));
@@ -102,6 +103,9 @@ export function AvailablePanel() {
                 </span>
                 <span className={s.meta}>
                   {closesIn(d.pickupUntil, now)}, best before {timeOfDay(d.bestBefore, now)}
+                </span>
+                <span>
+                  <RiskBadge d={d} kitchen={kitchen} />
                 </span>
               </span>
               {accepting && (

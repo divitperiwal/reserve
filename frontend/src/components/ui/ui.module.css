@@ -139,6 +139,9 @@
   background: var(--fill);
   color: var(--ink-2);
 }
+.risk {
+  justify-self: start;
+}
 .t-critical,
 .t-criticalSoft {
   background: var(--red-soft);

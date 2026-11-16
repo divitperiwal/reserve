@@ -13,7 +13,9 @@ import {
 import { createPortal } from 'react-dom';
 import { Link, type LinkProps } from 'react-router-dom';
 import { AlertCircle, Apple, Check, ChevronRight, Croissant, Package, Soup, Wheat, X, type LucideIcon } from 'lucide-react';
-import type { Category, Diet, Urgency } from '../../lib/types';
+import type { Category, Diet, Donation, Urgency } from '../../lib/types';
+import { rescueRisk, type RiskLevel, type RiskOpts } from '../../lib/risk';
+import { span } from '../../features/tracking/geo';
 import { clock, urgencyOf, useNow } from '../../lib/time';
 import s from './ui.module.css';
 
@@ -79,6 +81,21 @@ export function Badge({ tone = 'neutral', dot, children, className }: { tone?: T
       {dot && <span className={s.dot} aria-hidden />}
       {children}
     </span>
+  );
+}
+
+const riskTone: Record<RiskLevel, Tone> = { SAFE: 'fresh', TIGHT: 'soon', AT_RISK: 'critical' };
+
+// Will this food reach a kitchen before best-before, given the trip still ahead
+export function RiskBadge({ d, ...opts }: { d: Donation } & Omit<RiskOpts, 'now'>) {
+  const now = useNow();
+  const { level, spareMin } = rescueRisk(d, { ...opts, now });
+  const spare = span(Math.max(0, spareMin) * 60_000);
+  const text = level === 'AT_RISK' ? 'At risk' : `${level === 'SAFE' ? 'Safe' : 'Tight'}, ${spare} to spare`;
+  return (
+    <Badge tone={riskTone[level]} dot className={s.risk}>
+      {text}
+    </Badge>
   );
 }
 
