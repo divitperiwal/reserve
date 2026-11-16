@@ -11,7 +11,7 @@ function failureText(err: unknown) {
 export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
   const video = useRef<HTMLVideoElement>(null);
   const onScanRef = useRef(onScan);
-  const [failure, setFailure] = useState<string | null>(() => (navigator.mediaDevices?.getUserMedia ? null : failureText(null)));
+  const [failure, setFailure] = useState<string | null>(() => ('getUserMedia' in (navigator.mediaDevices ?? {}) ? null : failureText(null)));
 
   useEffect(() => {
     onScanRef.current = onScan;
@@ -27,7 +27,7 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
       stream?.getTracks().forEach((t) => t.stop());
     };
 
-    if (!navigator.mediaDevices?.getUserMedia) return;
+    if (!navigator.mediaDevices) return;
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
