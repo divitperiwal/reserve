@@ -29,7 +29,7 @@ export default function App() {
                 <Route path="/track/:id" element={<RequireRole roles={['DONOR', 'NGO', 'VOLUNTEER']}><TrackPage /></RequireRole>} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/certificate" element={<RequireRole roles={['DONOR', 'NGO', 'VOLUNTEER']}><CertificatePage /></RequireRole>} />
-                <Route path="*"element={<Navigate to="/" replace />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
           </ToastProvider>

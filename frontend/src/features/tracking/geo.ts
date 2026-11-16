@@ -18,8 +18,6 @@ export const isActive = (s: Status) => s === 'CLAIMED' || s === 'PICKED_UP';
 
 export const etaMin = (distKm: number) => Math.max(1, Math.round((distKm / SPEED_KMH) * 60));
 
-export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
 export function span(ms: number, t: T = fill): string {
   const total = Math.max(0, Math.round(ms / 60_000));
   const h = Math.floor(total / 60);

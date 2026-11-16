@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useT } from '../../lib/i18n';
 import s from './stage.module.css';
 
+const MAX_SIDE = 640;
+const FRAME_MS = 100;
+
 function failureText(err: unknown) {
   const name = (err as { name?: string })?.name;
   if (name === 'NotAllowedError' || name === 'SecurityError') return 'Camera access was denied. Allow it in your browser settings, or type the code instead.';
@@ -23,6 +26,7 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
     let live = true;
     let stream: MediaStream | null = null;
     let frame = 0;
+    let last = 0;
     const stop = () => {
       live = false;
       cancelAnimationFrame(frame);
@@ -33,12 +37,14 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const tick = () => {
+    const tick = (now: number) => {
       const v = video.current;
       if (!live || !v || !ctx) return;
-      if (v.readyState >= v.HAVE_ENOUGH_DATA && v.videoWidth > 0) {
-        canvas.width = v.videoWidth;
-        canvas.height = v.videoHeight;
+      if (now - last >= FRAME_MS && v.readyState >= v.HAVE_ENOUGH_DATA && v.videoWidth > 0) {
+        last = now;
+        const scale = Math.min(1, MAX_SIDE / Math.max(v.videoWidth, v.videoHeight));
+        canvas.width = Math.round(v.videoWidth * scale);
+        canvas.height = Math.round(v.videoHeight * scale);
         ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
         const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const hit = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
@@ -65,7 +71,11 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
         await v.play();
         frame = requestAnimationFrame(tick);
       })
-      .catch((err) => live && setFailure(failureText(err)));
+      .catch((err) => {
+        if (!live) return;
+        stop();
+        setFailure(failureText(err));
+      });
 
     return stop;
   }, []);
