@@ -16,6 +16,7 @@ import com.reserve.auth.AuthUser;
 import com.reserve.common.ApiException;
 import com.reserve.donation.UploadService;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -62,7 +63,7 @@ public class AiDraftService {
     public AiDraftService(@Value("${app.ai.api-key}") String apiKey, @Value("${app.ai.model}") String model,
                           @Value("${app.zone}") String zone, UploadService uploads, DraftLimiter limiter) {
         this.client = apiKey.isBlank() ? null
-                : AnthropicOkHttpClient.builder().apiKey(apiKey).timeout(Duration.ofSeconds(30)).build();
+                : AnthropicOkHttpClient.builder().apiKey(apiKey).timeout(Duration.ofSeconds(30)).maxRetries(1).build();
         this.model = model;
         this.zone = ZoneId.of(zone);
         this.uploads = uploads;
@@ -91,13 +92,10 @@ public class AiDraftService {
         if (!limiter.tryAcquire(me.id(), Instant.now())) {
             throw ApiException.tooManyRequests("Too many requests, try again later");
         }
-        StructuredMessageCreateParams<ModelDraft> params = request(req, hasPhoto);
         try {
-            return toDraft(client.messages().create(params));
-        } catch (ApiException e) {
-            throw e;
+            return toDraft(client.messages().create(request(req, hasPhoto)));
         } catch (RuntimeException e) {
-            log.warn("AI draft failed: {}", e.toString());
+            log.warn("AI draft failed", e);
             throw ApiException.unprocessable(COULDNT_READ);
         }
     }
@@ -113,7 +111,7 @@ public class AiDraftService {
         }
         return MessageCreateParams.builder()
                 .model(model)
-                .maxTokens(1024L)
+                .maxTokens(4096L)
                 .system(SYSTEM)
                 .outputConfig(StructuredOutputConfig.<ModelDraft>builder()
                         .format(ModelDraft.class)
@@ -128,7 +126,7 @@ public class AiDraftService {
         try {
             bytes = uploads.read(name);
         } catch (IOException e) {
-            throw ApiException.unprocessable(COULDNT_READ);
+            throw new UncheckedIOException("Could not read uploaded photo " + name, e);
         }
         return ContentBlockParam.ofImage(ImageBlockParam.builder()
                 .source(Base64ImageSource.builder()
@@ -144,13 +142,18 @@ public class AiDraftService {
 
     private static DonationDraft toDraft(StructuredMessage<ModelDraft> message) {
         if (message.stopReason().filter(StopReason.END_TURN::equals).isEmpty()) {
-            throw ApiException.unprocessable(COULDNT_READ);
+            String details = message.stopDetails()
+                    .map(d -> "category=" + d.category().map(Object::toString).orElse("none")
+                            + ", explanation=" + d.explanation().orElse("none"))
+                    .orElse("none");
+            throw new IllegalStateException("Unexpected stop reason " + message.stopReason().map(Object::toString).orElse("none")
+                    + ", details: " + details);
         }
         ModelDraft raw = message.content().stream()
                 .flatMap(block -> block.text().stream())
                 .map(typed -> typed.text())
                 .findFirst()
-                .orElseThrow(() -> ApiException.unprocessable(COULDNT_READ));
+                .orElseThrow(() -> new IllegalStateException("Response had no text block"));
         return DonationDraft.clean(raw);
     }
 }

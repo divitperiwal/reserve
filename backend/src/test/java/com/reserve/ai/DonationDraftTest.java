@@ -56,4 +56,17 @@ class DonationDraftTest {
 
         assertEquals(160, d.title().length());
     }
+
+    @Test
+    void enumParsingIgnoresTheDefaultLocale() {
+        java.util.Locale saved = java.util.Locale.getDefault();
+        java.util.Locale.setDefault(java.util.Locale.forLanguageTag("tr"));
+        try {
+            DonationDraft d = DonationDraft.clean(new ModelDraft("a", "veg", "fruit_veg", null, "kg", null, null, null, null));
+
+            assertEquals(Category.FRUIT_VEG, d.category());
+        } finally {
+            java.util.Locale.setDefault(saved);
+        }
+    }
 }

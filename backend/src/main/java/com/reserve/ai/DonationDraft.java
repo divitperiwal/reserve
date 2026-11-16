@@ -3,6 +3,7 @@ package com.reserve.ai;
 import com.reserve.donation.Category;
 import com.reserve.donation.Diet;
 import com.reserve.donation.Unit;
+import java.util.Locale;
 
 public record DonationDraft(
         String title,
@@ -47,7 +48,7 @@ public record DonationDraft(
             return null;
         }
         try {
-            return Enum.valueOf(type, value.trim().toUpperCase());
+            return Enum.valueOf(type, value.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             return null;
         }
