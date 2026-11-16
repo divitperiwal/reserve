@@ -30,9 +30,13 @@ class SurplusForecastTest {
     }
 
     private static Donation donation(User donor, String pickupFrom, int meals, Status status) {
+        return donation(donor, pickupFrom, meals, status, 0);
+    }
+
+    private static Donation donation(User donor, String pickupFrom, int meals, Status status, int weeksBack) {
         Donation d = new Donation(donor, "Food", Diet.VEG, Category.COOKED, meals, Unit.SERVINGS);
         d.setLocation(donor.getAddress(), 12.9, 77.6);
-        d.setPickupFrom(OffsetDateTime.parse(pickupFrom));
+        d.setPickupFrom(OffsetDateTime.parse(pickupFrom).minusWeeks(weeksBack));
         d.setStatus(status);
         return d;
     }
@@ -70,19 +74,32 @@ class SurplusForecastTest {
     }
 
     @Test
-    void returnsSixSoonestFirst() {
+    void returnsTheSixLargestSoonestFirst() {
         List<Donation> history = new ArrayList<>();
         for (long id = 1; id <= 8; id++) {
             User u = donor(id, "Donor " + id);
             String time = "T" + String.format("%02d", id + 3) + ":00:00+05:30";
-            history.add(donation(u, "2026-11-16" + time, 10, Status.DELIVERED));
-            history.add(donation(u, "2026-11-09" + time, 10, Status.DELIVERED));
+            history.add(donation(u, "2026-11-16" + time, (int) id * 10, Status.DELIVERED));
+            history.add(donation(u, "2026-11-09" + time, (int) id * 10, Status.DELIVERED));
         }
 
         List<ForecastEntry> out = SurplusForecast.forecast(history, NOW, ZONE);
 
-        assertEquals(6, out.size());
-        assertEquals(1L, out.get(0).donorId());
-        assertEquals(6L, out.get(5).donorId());
+        assertEquals(List.of(3L, 4L, 5L, 6L, 7L, 8L), out.stream().map(ForecastEntry::donorId).toList());
+    }
+
+    @Test
+    void clampsWeeksSeenToWeeksLooked() {
+        User a = donor(1, "Annapurna Kitchen");
+        List<Donation> history = new ArrayList<>();
+        history.add(donation(a, "2026-09-23T11:00:00+05:30", 10, Status.DELIVERED));
+        for (int week = 0; week < 8; week++) {
+            history.add(donation(a, "2026-11-18T09:30:00+05:30", 10, Status.DELIVERED, week));
+        }
+
+        List<ForecastEntry> out = SurplusForecast.forecast(history, NOW, ZONE);
+
+        assertEquals(1, out.size());
+        assertEquals(8, out.get(0).weeksSeen());
     }
 }

@@ -1,9 +1,14 @@
 import { Link } from 'react-router-dom';
-import { Bike } from 'lucide-react';
+import { useState } from 'react';
+import { CircleMarker } from 'react-leaflet';
+import { Bike, Flame } from 'lucide-react';
+import { Segmented } from '../../components/ui';
 import { LiveMap, type Pin } from '../../components/map/LiveMap';
 import { FoodThumb } from '../../components/dash';
 import { useAuth } from '../../lib/auth';
+import { pointRadius } from '../../lib/forecast';
 import { etaMinutes, firstName, useOnTheWay } from './useDeliveries';
+import { useSurplus } from './useSurplus';
 import s from './map.module.css';
 
 const OVERLAY = 376;
@@ -12,6 +17,10 @@ const OVERLAY = 376;
 export function MapView() {
   const { user } = useAuth();
   const { list } = useOnTheWay();
+  const [history, setHistory] = useState(false);
+  const [days, setDays] = useState<30 | 56>(56);
+  const surplus = useSurplus(days, history);
+  const extent: [number, number][] = history && surplus.data ? surplus.data.points.map((pt) => [pt.lat, pt.lng]) : [];
   const wide = window.matchMedia('(min-width: 1024px)').matches;
   const kitchen = { lat: user?.lat ?? 12.9, lng: user?.lng ?? 80.1 };
 
@@ -24,7 +33,52 @@ export function MapView() {
 
   return (
     <div className={s.page}>
-      <LiveMap pins={pins} padding={80} padLeft={wide ? OVERLAY : 0} />
+      <LiveMap pins={pins} fitExtra={extent} padding={80} padLeft={wide ? OVERLAY : 0}>
+        {history &&
+          surplus.data?.points.map((pt, i) => {
+            const color = pt.status === 'DELIVERED' ? '#3a7d44' : '#d93025';
+            return (
+              <CircleMarker
+                key={`${days}-${i}`}
+                center={[pt.lat, pt.lng]}
+                radius={pointRadius(pt.kg)}
+                pathOptions={{ color, fillColor: color, weight: 1, fillOpacity: 0.35 }}
+              />
+            );
+          })}
+      </LiveMap>
+      <div className={s.history}>
+        <button type="button" className={s.historyBtn} aria-pressed={history} onClick={() => setHistory((h) => !h)}>
+          <Flame size={16} strokeWidth={1.75} aria-hidden />
+          History
+        </button>
+        {history && (
+          <>
+            <div className={s.period}>
+              <Segmented
+                label="History period"
+                value={days}
+                onChange={setDays}
+                options={[
+                  { value: 30, label: '30 days' },
+                  { value: 56, label: '56 days' },
+                ]}
+              />
+            </div>
+            <ul className={s.legend} aria-label="Legend">
+              <li>
+                <span className={s.dot} data-kind="rescued" aria-hidden />
+                Rescued
+              </li>
+              <li>
+                <span className={s.dot} data-kind="expired" aria-hidden />
+                Expired
+              </li>
+            </ul>
+            {surplus.error && <p className={s.historyError}>Couldn’t load history.</p>}
+          </>
+        )}
+      </div>
       <section className={s.card} aria-label="Arriving deliveries">
         <header className={s.head}>
           <h1 className={s.title}>Arriving</h1>

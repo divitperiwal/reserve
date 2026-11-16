@@ -4,14 +4,17 @@ import { Avatar, Button, Segmented, Skeleton } from '../../components/ui';
 import { Columns, Kpi, KpiRow, Page, Panel, Topbar } from '../../components/dash';
 import { api } from '../../lib/api';
 import { categoryLabel, num } from '../../lib/format';
+import { slotWords } from '../../lib/forecast';
 import { categoryImage } from '../../lib/food';
 import { BarChart } from './BarChart';
+import { useSurplus } from './useSurplus';
 import { asPct, useDashboard, weight, type Days } from './useDashboard';
 import p from './page.module.css';
 
 export function Insights() {
   const [days, setDays] = useState<Days>(7);
   const { data, error, refresh } = useDashboard(days);
+  const surplus = useSurplus(56);
   const [kg, kgUnit] = data ? weight(data.foodKg) : ['–', ''];
   const [co2, co2Unit] = data ? weight(data.co2Kg) : ['–', ''];
   const f = data?.funnel;
@@ -79,6 +82,36 @@ export function Insights() {
                       <span className={p.barLabel}>{x.label}</span>
                       <Bar value={x.value} max={f!.posted} />
                       <span className={p.num}>{num(x.value)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+            <Panel title="Expected surplus" action={<span className={p.note}>A pattern from past posts, not a promise</span>} flush>
+              {!surplus.data ? (
+                surplus.error ? (
+                  <p className={p.quiet}>Couldn’t load the forecast.</p>
+                ) : (
+                  <div className={p.pad}>
+                    <Skeleton h={120} r={12} />
+                  </div>
+                )
+              ) : surplus.data.forecast.length === 0 ? (
+                <p className={p.quiet}>No pattern yet. Donors who post in the same slot on two or more weeks appear here.</p>
+              ) : (
+                <ul className={p.forecast}>
+                  {surplus.data.forecast.map((f) => (
+                    <li key={`${f.donorId}-${f.from}`}>
+                      <span className={p.forecastText}>
+                        <strong>{f.donorName}</strong>
+                        <span>{slotWords(f.from, f.until)}</span>
+                        <em>
+                          seen {f.weeksSeen} of last {f.weeksLooked} weeks
+                        </em>
+                      </span>
+                      <span className={p.forecastMeals}>
+                        <strong>{num(f.expectedMeals)}</strong> meals
+                      </span>
                     </li>
                   ))}
                 </ul>

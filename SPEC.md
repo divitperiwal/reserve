@@ -92,7 +92,7 @@ Errors: `{ "message": string, "fields"?: Record<string,string> }` with 400/401/4
 - `GET /api/stats/me` → `MyStats`
 - `GET /api/stats/dashboard?days=7|30` (NGO) → `DashboardStats`
 - `GET /api/stats/leaderboard?days=30` (public, `days` 1 to 90) → `Leaderboard`, delivered donations in the period, top 10 volunteers and donors by meals
-- `GET /api/stats/surplus?days=56` (NGO, `days` 7 to 90) → `SurplusMap`: delivered and expired donations as map points plus a forecast of the next 6 expected donor slots
+- `GET /api/stats/surplus?days=56` (NGO, `days` 7 to 90) → `SurplusMap`: delivered and expired donations as map points plus a forecast of the 6 expected donor slots with the most meals that fall within the next 7 days, soonest first
 - `GET /api/activity?limit=20` (any auth) → `Activity[]`
 - `GET /api/export.csv?days=7|30` (NGO, token may come as `?token=`) → `text/csv`
 

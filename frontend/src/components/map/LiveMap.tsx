@@ -58,6 +58,7 @@ interface LiveMapProps {
   remaining?: [number, number][];
   radius?: { lat: number; lng: number; km: number };
   fit?: boolean;
+  fitExtra?: [number, number][];
   padding?: number;
   padLeft?: number;
   center?: [number, number];
@@ -73,6 +74,7 @@ export function LiveMap({
   remaining,
   radius,
   fit = true,
+  fitExtra,
   padding = 48,
   padLeft = 0,
   center,
@@ -118,7 +120,7 @@ export function LiveMap({
           {!p.label && p.onClick && <Tooltip direction="top" offset={[0, -10]}>Open</Tooltip>}
         </Marker>
       ))}
-      {fit && <FitBounds points={pins.map((p) => [p.lat, p.lng])} padding={padding} padLeft={padLeft} />}
+      {fit && <FitBounds points={[...pins.map((p): [number, number] => [p.lat, p.lng]), ...(fitExtra ?? [])]} padding={padding} padLeft={padLeft} />}
       {children}
     </MapContainer>
   );

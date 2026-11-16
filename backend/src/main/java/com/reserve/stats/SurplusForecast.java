@@ -23,6 +23,9 @@ final class SurplusForecast {
     private static final int SLOT_HOURS = 3;
     private static final int LIMIT = 6;
 
+    private static final Comparator<ForecastEntry> SOONEST =
+            Comparator.comparing(ForecastEntry::from).thenComparing(ForecastEntry::donorId);
+
     private record Key(Long donorId, DayOfWeek day, int slot) {
     }
 
@@ -38,8 +41,9 @@ final class SurplusForecast {
         return groups.entrySet().stream()
                 .map(e -> entry(e.getKey(), e.getValue(), now, zone))
                 .filter(e -> e.weeksSeen() >= MIN_WEEKS)
-                .sorted(Comparator.comparing(ForecastEntry::from).thenComparing(ForecastEntry::donorId))
+                .sorted(Comparator.comparingInt(ForecastEntry::expectedMeals).reversed().thenComparing(SOONEST))
                 .limit(LIMIT)
+                .sorted(SOONEST)
                 .toList();
     }
 
@@ -58,7 +62,7 @@ final class SurplusForecast {
         ZonedDateTime from = nextSlotStart(key, now.atZoneSameInstant(zone));
         return new ForecastEntry(key.donorId(), latest.getDonor().getName(), latest.getAddress(), latest.getLat(),
                 latest.getLng(), from.toOffsetDateTime(), from.plusHours(SLOT_HOURS).toOffsetDateTime(),
-                expectedMeals, weeks.size(), WEEKS_LOOKED);
+                expectedMeals, Math.min(weeks.size(), WEEKS_LOOKED), WEEKS_LOOKED);
     }
 
     private static ZonedDateTime nextSlotStart(Key key, ZonedDateTime now) {
