@@ -211,3 +211,13 @@ export interface AuthResponse {
   token: string;
   user: User;
 }
+
+export interface PushKey {
+  enabled: boolean;
+  publicKey?: string;
+}
+
+export interface PushSubscriptionInput {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}

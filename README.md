@@ -46,3 +46,5 @@ Food that nobody has collected expires when its pickup window closes.
 ## Configuration
 
 Backend environment variables: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`, `APP_OTP_DEV`.
+
+Push notifications are off until you set a VAPID key pair. Generate one with `npx web-push generate-vapid-keys`, then set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` (and optionally `VAPID_SUBJECT`, a `mailto:` or `https:` contact, default `mailto:admin@reserve.local`). Browsers allow push only on `https` or `localhost`.

@@ -1,14 +1,18 @@
 import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
-import { Avatar, Badge, Button } from '../../components/ui';
+import { Avatar, Badge, Button, useToast } from '../../components/ui';
 import { Columns, Page, Panel, Topbar } from '../../components/dash';
 import { useAuth } from '../../lib/auth';
+import { usePushSetting } from '../../lib/push';
 import { ImpactCard } from '../impact/ImpactCard';
+import { NotificationsRow } from '../push/NotificationsRow';
 import s from './pages.module.css';
 
 export default function Profile() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
+  const push = usePushSetting((m) => toast(m, { error: true }));
   if (!user) return null;
 
   return (
@@ -46,6 +50,11 @@ export default function Profile() {
         side={
           <>
             <ImpactCard mealsLabel="Meals shared" />
+            {push && (
+              <Panel title="Notifications" flush>
+                <NotificationsRow push={push} subtitle="Alerts on this device" />
+              </Panel>
+            )}
             <Panel title="Account">
               <div className={s.account}>
                 <p>Signed in as {user.name}.</p>

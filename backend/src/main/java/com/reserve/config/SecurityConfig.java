@@ -38,7 +38,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/**", "/api/voice/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/stats/public", "/api/stats/leaderboard", "/api/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/stats/public", "/api/stats/leaderboard", "/api/uploads/**", "/api/push/key").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/donations/feed").hasAnyRole("VOLUNTEER", "NGO")
                         .requestMatchers(HttpMethod.POST, "/api/donations", "/api/uploads").hasRole("DONOR")
                         .requestMatchers(HttpMethod.GET, "/api/ai/status").hasRole("DONOR")

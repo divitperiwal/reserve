@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star } from 'lucide-react';
-import { Avatar, Button, Chip, Field, Group, Row, Sheet, Toggle } from '../../components/ui';
+import { Avatar, Button, Chip, Field, Group, Row, Sheet, Toggle, useToast } from '../../components/ui';
 import { useAuth } from '../../lib/auth';
+import { usePushSetting } from '../../lib/push';
+import { NotificationsRow } from '../push/NotificationsRow';
 import { useVolunteer } from './context';
 import s from './volunteer.module.css';
 
@@ -13,6 +15,8 @@ export default function ProfilePage() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const [sheet, setSheet] = useState(false);
+  const toast = useToast();
+  const push = usePushSetting((m) => toast(m, { error: true }));
 
   return (
     <div className={s.page}>
@@ -38,6 +42,12 @@ export default function ProfilePage() {
         <Group footer="When you are off duty, new pickups are not shown to you.">
           <Row title="On duty" trailing={<Toggle label="On duty" checked={user.onDuty} onChange={setOnDuty} />} chevron={false} />
         </Group>
+
+        {push && (
+          <Group>
+            <NotificationsRow push={push} subtitle="Pickups near you that need a volunteer" />
+          </Group>
+        )}
 
         <Group title="Delivery">
           <Row title="Vehicle" trailing={user.vehicle ?? 'Not set'} onClick={() => setSheet(true)} />

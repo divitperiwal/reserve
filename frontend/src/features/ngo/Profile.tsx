@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
-import { Avatar, Badge, Button } from '../../components/ui';
+import { Avatar, Badge, Button, useToast } from '../../components/ui';
 import { Columns, Page, Panel, Topbar } from '../../components/dash';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
+import { usePushSetting } from '../../lib/push';
 import { num } from '../../lib/format';
 import type { MyStats } from '../../lib/types';
 import { ImpactCard } from '../impact/ImpactCard';
+import { NotificationsRow } from '../push/NotificationsRow';
 import p from './page.module.css';
 
 export function Profile() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
+  const push = usePushSetting((m) => toast(m, { error: true }));
   const [stats, setStats] = useState<MyStats | null>(null);
 
   useEffect(() => {
@@ -74,6 +78,11 @@ export function Profile() {
                 </div>
               </dl>
             </Panel>
+            {push && (
+              <Panel title="Notifications" flush>
+                <NotificationsRow push={push} subtitle="Critical food near your kitchen" />
+              </Panel>
+            )}
             <Panel title="Account">
               <div className={p.account}>
                 <p>Signed in as {user.name}.</p>

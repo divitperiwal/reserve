@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,9 +39,11 @@ public class DonationService {
     private final ActivityService activities;
     private final DonationMapper mapper;
     private final SseHub hub;
+    private final ApplicationEventPublisher events;
 
     public DonationService(DonationRepository donations, LocationPingRepository pings, UserRepository userRepository,
-                           UserService users, ActivityService activities, DonationMapper mapper, SseHub hub) {
+                           UserService users, ActivityService activities, DonationMapper mapper, SseHub hub,
+                           ApplicationEventPublisher events) {
         this.donations = donations;
         this.pings = pings;
         this.userRepository = userRepository;
@@ -48,6 +51,7 @@ public class DonationService {
         this.activities = activities;
         this.mapper = mapper;
         this.hub = hub;
+        this.events = events;
     }
 
     public static String handoverCode() {
@@ -119,6 +123,7 @@ public class DonationService {
         donations.save(d);
         activities.record(ActivityType.POSTED, donor, d);
         publish(d);
+        events.publishEvent(new DonationEvent(DonationEvent.Type.CREATED, d.getId()));
         return view(d, donor);
     }
 
@@ -158,6 +163,7 @@ public class DonationService {
             publish(d);
         }
         publish(taken);
+        events.publishEvent(new DonationEvent(DonationEvent.Type.ACCEPTED, taken.getId()));
         return view(taken, ngo);
     }
 

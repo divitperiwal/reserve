@@ -27,6 +27,13 @@ spring:
   mvc:
     async:
       request-timeout: -1
+  task:
+    execution:
+      thread-name-prefix: task-
+      pool:
+        core-size: ${APP_TASK_POOL_SIZE:2}
+        max-size: ${APP_TASK_POOL_SIZE:2}
+        queue-capacity: 200
 
 app:
   jwt:
@@ -41,4 +48,8 @@ app:
     model: ${AI_MODEL:claude-opus-5-5}
   voice:
     secret: ${VOICE_SECRET:}
+  push:
+    public-key: ${VAPID_PUBLIC_KEY:}
+    private-key: ${VAPID_PRIVATE_KEY:}
+    subject: ${VAPID_SUBJECT:mailto:admin@reserve.local}
   cors-origin: ${APP_CORS_ORIGINS:http://localhost:*,http://127.0.0.1:*}

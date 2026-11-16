@@ -49,7 +49,7 @@ activities(id bigserial pk, type varchar, actor_id fk null, donation_id fk, crea
 otp_codes(phone pk, code, expires_at)
 ```
 
-Later migrations: `V4__donation_source.sql` adds `donations.source varchar(16) not null default 'APP'` (`APP` or `VOICE`).
+Later migrations: `V4__donation_source.sql` adds `donations.source varchar(16) not null default 'APP'` (`APP` or `VOICE`). `V5__push_subscriptions.sql` adds `push_subscriptions(id bigserial pk, user_id fk users not null, endpoint text unique not null, p256dh text not null, auth text not null, created_at timestamptz default now())`, indexed on `user_id`.
 
 Seed (Java `DataSeeder`, runs when users table is empty, times relative to now) around Tambaram/Chengalpattu (lat ~12.82–12.93, lng ~80.04–80.13): NGOs Hope Kitchen Trust, Little Hearts Home, Annai Shelter; donors Kalyan Mahal (event venue), Hotel Annapoorna, SRM Hostel Mess, Spice Route, Sunrise Bakery, Green Basket, TechPark Cafeteria, a home kitchen; volunteers Ravi Kumar, Priya S., Arjun M., Nithya V., Krrish Pandey. ~9 available donations across urgencies, 1 active claim (Veg biryani by Ravi to Hope Kitchen, PICKED_UP with a few location pings), eight weeks of patterned history from a fixed `Random(42)` (Kalyan Mahal weekend evenings, SRM Hostel Mess weekday afternoons, Sunrise Bakery nightly, TechPark weekday afternoons, Hotel Annapoorna Friday and Saturday late evenings, a few scattered posts; about 12% expired, the rest delivered) for charts, the surplus forecast and the heatmap, plus a few recent expired. All seeded passwords `reserve123`. Demo logins: donor `9840100001` (Kalyan Mahal), volunteer `9840100002` (Krrish Pandey), NGO `9840100003` (Hope Kitchen Trust), volunteer Ravi `9840100004`.
 
@@ -102,6 +102,16 @@ Public to Spring Security; every request must carry header `X-Voice-Secret` equa
   - Times are `+90` (minutes from now) or `21:00` (24 hour clock in `app.zone`, today, or tomorrow if already past); `pickupFrom` defaults to now. Otherwise 400 naming the field.
   - All four safety answers must be exactly true (JSON `true` or the text `"true"`, any case; `1`, `"yes"`, empty or missing do not count), else 400 `We can only take food that is covered, kept at a safe temperature, never served, and has allergens noted`.
   - Address and lat/lng come from the donor's profile. The built request runs the same bean constraints and service validation, POSTED activity and `donation` broadcast as `POST /api/donations`, with `source: VOICE`; a validation failure returns its first field message as `message`.
+
+### Web push
+Configured by `app.push.public-key`, `app.push.private-key`, `app.push.subject` (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, default `mailto:admin@reserve.local`). Off when either key is blank: nothing is sent and the profile toggle is hidden.
+- `GET /api/push/key` (public) → `{enabled: boolean, publicKey?}`.
+- `POST /api/push/subscribe` (any auth) `{endpoint, keys: {p256dh, auth}}` → 204; upserts by `endpoint`, which moves to the caller if another user had it. `endpoint` must start with `https://`.
+- `POST /api/push/unsubscribe` (any auth) `{endpoint}` → 204; deletes the caller's row for that endpoint.
+- Sending: `DonationService` publishes `DonationEvent(CREATED | ACCEPTED, donationId)` from the shared create path (app and voice) and from accept (the accepted row, which is the new row on a split). `PushNotifier` handles it after commit with `@Async` on Spring's task pool (`spring.task.execution.pool`, size `APP_TASK_POOL_SIZE`, default 2, queue 200). Payload is JSON `{title, body, url}`; each send waits at most 10 s; a 404 or 410 answer deletes that subscription. Recipients with the same text share one subscription query.
+  - Created with `bestBefore - now < 2h`: NGOs with `acceptingFood` within 7 km. `Critical food nearby`, `40 servings of veg biryani, 2.1 km away, best before 9:10 pm`, url `/ngo`.
+  - Accepted: on-duty volunteers within 7 km of the pickup. `Pickup needed`, `40 servings of veg biryani for Hope Kitchen Trust, 2.1 km away, pick up by 9:10 pm`, url `/volunteer`.
+- Frontend: `public/manifest.webmanifest` with 192 and 512 icons makes the app installable; `public/sw.js` serves `/assets/` cache-first, navigations network-first with the cached `/` as fallback, never touches `/api`, shows `push` notifications and on click focuses an open tab on that path or opens it. A Notifications row on the volunteer, donor and NGO profiles turns push on for this browser (`src/lib/push.ts`).
 
 ### Stats & activity
 - `GET /api/stats/public` (public) → `PublicStats`

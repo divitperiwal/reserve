@@ -10,6 +10,8 @@ import type {
   MyStats,
   NgoRef,
   PublicStats,
+  PushKey,
+  PushSubscriptionInput,
   Role,
   SurplusMap,
   User,
@@ -137,6 +139,10 @@ export const api = {
 
   aiStatus: () => request<{ enabled: boolean }>('GET', '/ai/status'),
   aiDraft: (input: { photoUrl: string } | { text: string }) => request<DonationDraft>('POST', '/ai/draft', input),
+
+  pushKey: () => request<PushKey>('GET', '/push/key'),
+  pushSubscribe: (input: PushSubscriptionInput) => request<void>('POST', '/push/subscribe', input),
+  pushUnsubscribe: (endpoint: string) => request<void>('POST', '/push/unsubscribe', { endpoint }),
 
   publicStats: () => request<PublicStats>('GET', '/stats/public'),
   myStats: () => request<MyStats>('GET', '/stats/me'),
