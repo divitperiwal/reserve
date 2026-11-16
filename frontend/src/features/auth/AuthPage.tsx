@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { Bike, Building2, Store, type LucideIcon } from 'lucide-react';
-import { Group, Logo, Row, Segmented, Sheet, useToast } from '../../components/ui';
+import { Group, LanguageSwitch, Logo, Row, Segmented, Sheet, useToast } from '../../components/ui';
 import { api } from '../../lib/api';
 import { homeFor, useAuth } from '../../lib/auth';
+import { useT } from '../../lib/i18n';
 import type { Role } from '../../lib/types';
 import { parseRole, readError, useFinishAuth } from './authUtils';
 import { SignIn } from './SignIn';
@@ -26,6 +27,7 @@ const stats = [
 
 // Photo mosaic with the promise and static impact numbers
 function BrandPanel() {
+  const t = useT();
   return (
     <aside className={s.brand}>
       <div className={s.mosaic} aria-hidden>
@@ -36,13 +38,13 @@ function BrandPanel() {
       <div className={s.brandBody}>
         <Logo className={s.brandLogo} size={32} />
         <div className={s.pitch}>
-          <p className={s.promise}>Good food should reach a plate, not a bin.</p>
-          <p className={s.promiseSub}>Donors post surplus, volunteers deliver it, kitchens serve it.</p>
+          <p className={s.promise}>{t('Good food should reach a plate, not a bin.')}</p>
+          <p className={s.promiseSub}>{t('Donors post surplus, volunteers deliver it, kitchens serve it.')}</p>
         </div>
         <dl className={s.stats}>
           {stats.map(({ value, label }) => (
             <div key={label} className={s.stat}>
-              <dt>{label}</dt>
+              <dt>{t(label)}</dt>
               <dd>{value}</dd>
             </div>
           ))}
@@ -54,6 +56,7 @@ function BrandPanel() {
 
 export default function AuthPage() {
   const { user, loading } = useAuth();
+  const t = useT();
   const [params] = useSearchParams();
   const initialRole = parseRole(params.get('role'));
   const [tab, setTab] = useState<'in' | 'up'>(initialRole ? 'up' : 'in');
@@ -66,26 +69,29 @@ export default function AuthPage() {
     <div className={s.page}>
       <main className={s.pane}>
         <div className={s.column}>
+          <div className={s.langRow}>
+            <LanguageSwitch compact />
+          </div>
           <div className={s.head}>
-            <h1 className={s.title}>{tab === 'in' ? 'Welcome back' : 'Join ReServe'}</h1>
-            <p className={s.sub}>{tab === 'in' ? 'Sign in to pick up where you left off.' : 'It takes about a minute.'}</p>
+            <h1 className={s.title}>{t(tab === 'in' ? 'Welcome back' : 'Join ReServe')}</h1>
+            <p className={s.sub}>{t(tab === 'in' ? 'Sign in to pick up where you left off.' : 'It takes about a minute.')}</p>
           </div>
           <Segmented
             block
-            label="Account"
+            label={t('Account')}
             value={tab}
             onChange={setTab}
             options={[
-              { value: 'in', label: 'Sign in' },
-              { value: 'up', label: 'Create account' },
+              { value: 'in', label: t('Sign in') },
+              { value: 'up', label: t('Create account') },
             ]}
           />
           {tab === 'in' ? <SignIn /> : <SignUp initialRole={initialRole} />}
           <button type="button" className={s.demo} onClick={() => setDemoOpen(true)}>
-            Try a demo account
+            {t('Try a demo account')}
           </button>
           <a className={s.credit} href="/food/credits.html" target="_blank" rel="noreferrer">
-            Food photos from Wikimedia Commons
+            {t('Food photos from Wikimedia Commons')}
           </a>
         </div>
       </main>
@@ -98,6 +104,7 @@ export default function AuthPage() {
 function DemoSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const finish = useFinishAuth();
   const toast = useToast();
+  const t = useT();
   const [busy, setBusy] = useState<Role | null>(null);
 
   const use = async (role: Role, phone: string) => {
@@ -105,14 +112,14 @@ function DemoSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
     try {
       finish(await api.login(phone, 'reserve123'));
     } catch (err) {
-      toast(readError(err).message ?? 'Could not sign in', { error: true });
+      toast(readError(err, t).message ?? t('Could not sign in'), { error: true });
       setBusy(null);
     }
   };
 
   return (
-    <Sheet open={open} onClose={onClose} title="Demo accounts">
-      <p className={s.sheetLead}>Explore ReServe from each side. Nothing you do here affects real pickups.</p>
+    <Sheet open={open} onClose={onClose} title={t('Demo accounts')}>
+      <p className={s.sheetLead}>{t('Explore ReServe from each side. Nothing you do here affects real pickups.')}</p>
       <Group>
         {demos.map(({ role, phone, name, sub, icon: Icon }) => (
           <Row
@@ -122,8 +129,8 @@ function DemoSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
                 <Icon size={20} strokeWidth={1.75} aria-hidden />
               </span>
             }
-            title={name}
-            subtitle={busy === role ? 'Signing in' : sub}
+            title={t(name)}
+            subtitle={t(busy === role ? 'Signing in' : sub)}
             onClick={() => !busy && use(role, phone)}
           />
         ))}

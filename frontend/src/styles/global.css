@@ -117,3 +117,9 @@ svg {
     scroll-behavior: auto !important;
   }
 }
+
+/* Tamil and Devanagari need room for vowel signs and conjuncts */
+html:not([lang='en']) :is(h1, h2, h3) {
+  letter-spacing: normal;
+  line-height: 1.25;
+}

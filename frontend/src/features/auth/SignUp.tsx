@@ -3,6 +3,7 @@ import { Bike, Building2, Check, LocateFixed, Store, type LucideIcon } from 'luc
 import { Button, Chip, Field, Progress, labelClass } from '../../components/ui';
 import { api } from '../../lib/api';
 import { currentPosition } from '../../lib/format';
+import { useT } from '../../lib/i18n';
 import type { Role } from '../../lib/types';
 import { FormError, PasswordField, PhoneField } from './fields';
 import { PHONE_ERROR, focusFirst, readError, useFinishAuth, validPhone, type Errors } from './authUtils';
@@ -37,6 +38,7 @@ const titles = { 1: 'Who are you?', 2: 'Your details', 3: 'Where are you based?'
 
 export function SignUp({ initialRole }: { initialRole?: Role }) {
   const finish = useFinishAuth();
+  const t = useT();
   const [step, setStep] = useState<1 | 2 | 3>(initialRole ? 2 : 1);
   const [role, setRole] = useState<Role | undefined>(initialRole);
   const [name, setName] = useState('');
@@ -51,10 +53,10 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
   const [busy, setBusy] = useState(false);
 
   const check = (field: string, v: string) => {
-    if (field === 'name') return v.trim().length < 2 ? 'Enter a name' : undefined;
-    if (field === 'phone') return validPhone(v) ? undefined : PHONE_ERROR;
-    if (field === 'password') return v.length < 6 ? 'Use at least 6 characters' : undefined;
-    if (field === 'address') return v.trim().length < 3 ? 'Add an address so we can match you with nearby pickups' : undefined;
+    if (field === 'name') return v.trim().length < 2 ? t('Enter a name') : undefined;
+    if (field === 'phone') return validPhone(v) ? undefined : t(PHONE_ERROR);
+    if (field === 'password') return v.length < 6 ? t('Use at least 6 characters') : undefined;
+    if (field === 'address') return v.trim().length < 3 ? t('Add an address so we can match you with nearby pickups') : undefined;
     return undefined;
   };
 
@@ -80,7 +82,7 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
     try {
       const pos = await currentPosition();
       setCoords(pos);
-      if (!address.trim()) setAddress(`Near ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`);
+      if (!address.trim()) setAddress(t('Near {lat}, {lng}', { lat: pos.lat.toFixed(4), lng: pos.lng.toFixed(4) }));
     } catch (err) {
       setErrors((e) => ({ ...e, address: (err as Error).message }));
     } finally {
@@ -120,7 +122,7 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
       });
       finish(res);
     } catch (err) {
-      const { fields, message } = readError(err);
+      const { fields, message } = readError(err, t);
       const first = Math.min(3, ...Object.keys(fields).map((f) => stepOf[f] ?? 3)) as 1 | 2 | 3;
       setErrors(fields);
       setFormError(message);
@@ -134,14 +136,14 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
     <form className={s.form} onSubmit={submit} noValidate>
       <div className={s.progress}>
         <span className={s.stepCount}>
-          Step {step} of 3{role && step > 1 ? `, ${roleNoun[role]} account` : ''}
+          {role && step > 1 ? t('Step {step} of 3, {role} account', { step, role: t(roleNoun[role]) }) : t('Step {step} of 3', { step })}
         </span>
-        <Progress value={step / 3} label={`Step ${step} of 3`} />
+        <Progress value={step / 3} label={t('Step {step} of 3', { step })} />
       </div>
 
       <div key={step} className={s.stepBody}>
         <h2 id={`su-step-${step}`} tabIndex={-1} className={s.stepTitle}>
-          {titles[step]}
+          {t(titles[step])}
         </h2>
 
         {step === 1 && (
@@ -152,8 +154,8 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
                   <Icon size={22} strokeWidth={1.75} aria-hidden />
                 </span>
                 <span className={s.roleText}>
-                  <span className={s.roleTitle}>{title}</span>
-                  <span className={s.roleSub}>{sub}</span>
+                  <span className={s.roleTitle}>{t(title)}</span>
+                  <span className={s.roleSub}>{t(sub)}</span>
                 </span>
                 <span className={s.roleCheck} aria-hidden>
                   {role === r && <Check size={18} strokeWidth={2.25} />}
@@ -167,7 +169,7 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
           <>
             <Field
               id="su-name"
-              label={role === 'VOLUNTEER' ? 'Full name' : 'Name of your place'}
+              label={t(role === 'VOLUNTEER' ? 'Full name' : 'Name of your place')}
               autoComplete={role === 'VOLUNTEER' ? 'name' : 'organization'}
               placeholder={role === 'VOLUNTEER' ? 'Priya S.' : role === 'NGO' ? 'Hope Kitchen Trust' : 'Hotel Annapoorna'}
               value={name}
@@ -188,14 +190,14 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
               value={password}
               onChange={(e) => edit('password', e.target.value, setPassword)}
               error={errors.password}
-              hint="At least 6 characters"
+              hint={t('At least 6 characters')}
             />
             <fieldset className={s.chips}>
-              <legend className={labelClass}>{role === 'VOLUNTEER' ? 'How do you get around?' : 'Type of place'}</legend>
+              <legend className={labelClass}>{t(role === 'VOLUNTEER' ? 'How do you get around?' : 'Type of place')}</legend>
               <div className={s.chipRow}>
                 {(role === 'VOLUNTEER' ? vehicles : orgTypes[role]).map((o) => (
                   <Chip key={o} active={kind[role] === o} onClick={() => setKind((k) => ({ ...k, [role]: o }))}>
-                    {o}
+                    {t(o)}
                   </Chip>
                 ))}
               </div>
@@ -207,17 +209,17 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
         {step === 3 && role && (
           <>
             <p className={s.stepLead}>
-              {role === 'VOLUNTEER' ? 'We show you pickups near here first.' : 'Volunteers will come here to collect.'}
+              {t(role === 'VOLUNTEER' ? 'We show you pickups near here first.' : 'Volunteers will come here to collect.')}
             </p>
             <Field
               id="su-address"
-              label="Address"
+              label={t('Address')}
               autoComplete="street-address"
               placeholder="SRM Nagar, Kattankulathur"
               value={address}
               onChange={(e) => edit('address', e.target.value, setAddress)}
               error={errors.address}
-              hint={coords ? 'Pinned to your current location.' : undefined}
+              hint={coords ? t('Pinned to your current location.') : undefined}
             />
             <Button
               variant="tinted"
@@ -226,7 +228,7 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
               loading={locating}
               icon={coords ? <Check size={18} strokeWidth={2} aria-hidden /> : <LocateFixed size={18} strokeWidth={1.75} aria-hidden />}
             >
-              {locating ? 'Finding you' : coords ? 'Location pinned' : 'Use my location'}
+              {t(locating ? 'Finding you' : coords ? 'Location pinned' : 'Use my location')}
             </Button>
           </>
         )}
@@ -238,11 +240,11 @@ export function SignUp({ initialRole }: { initialRole?: Role }) {
         <div className={s.actions}>
           {step > 1 && (
             <Button variant="secondary" size="lg" onClick={() => go((step - 1) as 1 | 2)} disabled={busy}>
-              Back
+              {t('Back')}
             </Button>
           )}
           <Button type="submit" size="lg" loading={busy} className={s.grow}>
-            {step === 3 ? (busy ? 'Creating account' : 'Create account') : 'Continue'}
+            {t(step === 3 ? (busy ? 'Creating account' : 'Create account') : 'Continue')}
           </Button>
         </div>
       )}

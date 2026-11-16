@@ -1,9 +1,11 @@
+import { useT } from '../../lib/i18n';
 import s from './PickupPreview.module.css';
 
 // A static phone-sized rendition of the volunteer task card
 export function PickupPreview() {
+  const t = useT();
   return (
-    <figure className={s.device} aria-label="Preview of the volunteer pickup card">
+    <figure className={s.device} aria-label={t('Preview of the volunteer pickup card')}>
       <div className={s.screen}>
         <div className={s.map} aria-hidden>
           <span className={s.roadA} />
@@ -24,26 +26,26 @@ export function PickupPreview() {
             <span className={s.avatar}>R</span>
             <span className={s.online}>
               <span className={s.onlineDot} />
-              Online
+              {t('Online')}
             </span>
             <span className={s.chip}>
-              <strong>42</strong> meals
+              <strong>42</strong> {t('meals')}
             </span>
           </div>
         </div>
 
         <div className={s.card}>
           <div className={s.head}>
-            <span className={s.tag}>New pickup</span>
-            <span className={s.timer}>25m left</span>
+            <span className={s.tag}>{t('New pickup')}</span>
+            <span className={s.timer}>{t('{m}m left', { m: 25 })}</span>
           </div>
 
           <div className={s.food}>
             <img className={s.thumb} src="/food/biryani.jpg" alt="" width={56} height={56} />
             <span className={s.foodText}>
               <strong>Veg biryani</strong>
-              <span>24 meals, 6 kg</span>
-              <span>Anbu Illam asked for this</span>
+              <span>{t('{meals} meals, {kg} kg', { meals: 24, kg: 6 })}</span>
+              <span>{t('{ngo} asked for this', { ngo: 'Anbu Illam' })}</span>
             </span>
           </div>
 
@@ -51,7 +53,7 @@ export function PickupPreview() {
             <li>
               <span className={s.dot} />
               <span className={s.stopText}>
-                <em>Pick up</em>
+                <em>{t('Pick up')}</em>
                 <strong>Kalyan Mahal</strong>
               </span>
               <span className={s.km}>1.2 km</span>
@@ -59,7 +61,7 @@ export function PickupPreview() {
             <li>
               <span className={s.square} />
               <span className={s.stopText}>
-                <em>Drop</em>
+                <em>{t('Drop')}</em>
                 <strong>Anbu Illam</strong>
               </span>
               <span className={s.km}>2.1 km</span>
@@ -67,8 +69,8 @@ export function PickupPreview() {
           </ol>
 
           <div className={s.actions}>
-            <span className={s.skip}>Skip</span>
-            <span className={s.accept}>Accept, about 14 min</span>
+            <span className={s.skip}>{t('Skip')}</span>
+            <span className={s.accept}>{t('Accept, about {m} min', { m: 14 })}</span>
           </div>
         </div>
       </div>

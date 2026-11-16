@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { qty } from '../../lib/format';
+import { useT, type T } from '../../lib/i18n';
 import { useStream } from '../../lib/stream';
 import type { Donation } from '../../lib/types';
 import { useToast } from '../../components/ui';
@@ -16,16 +17,17 @@ interface DonorData {
 
 const Ctx = createContext<DonorData | null>(null);
 
-function announce(prev: Donation | undefined, next: Donation) {
-  const accepted = `${next.ngo?.name ?? 'A kitchen'} accepted ${qty(next)} of ${next.title}`;
+function announce(prev: Donation | undefined, next: Donation, t: T) {
+  const title = next.title;
+  const accepted = t('{ngo} accepted {qty} of {title}', { ngo: next.ngo?.name ?? t('A kitchen'), qty: qty(next), title });
   if (!prev) return next.status === 'ACCEPTED' ? accepted : null;
   if (prev.status === next.status) return null;
-  const who = next.volunteer ? firstName(next.volunteer.name) : 'A volunteer';
-  if (next.status === 'ACCEPTED') return prev.status === 'CLAIMED' ? `${next.title} needs a new volunteer` : accepted;
-  if (next.status === 'CLAIMED') return `${who} claimed your ${next.title}`;
-  if (next.status === 'DELIVERED') return `${next.title} was delivered${next.ngo ? ` to ${next.ngo.name}` : ''}`;
-  if (next.status === 'EXPIRED') return `${next.title} expired before it was picked up`;
-  if (next.status === 'AVAILABLE' && prev.status === 'ACCEPTED') return `${next.title} is waiting for a kitchen again`;
+  const who = next.volunteer ? firstName(next.volunteer.name) : t('A volunteer');
+  if (next.status === 'ACCEPTED') return prev.status === 'CLAIMED' ? t('{title} needs a new volunteer', { title }) : accepted;
+  if (next.status === 'CLAIMED') return t('{name} claimed your {title}', { name: who, title });
+  if (next.status === 'DELIVERED') return next.ngo ? t('{title} was delivered to {ngo}', { title, ngo: next.ngo.name }) : t('{title} was delivered', { title });
+  if (next.status === 'EXPIRED') return t('{title} expired before it was picked up', { title });
+  if (next.status === 'AVAILABLE' && prev.status === 'ACCEPTED') return t('{title} is waiting for a kitchen again', { title });
   return null;
 }
 
@@ -33,6 +35,7 @@ function announce(prev: Donation | undefined, next: Donation) {
 export function DonorDataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const toast = useToast();
+  const t = useT();
   const [items, setItems] = useState<Donation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const itemsRef = useRef(items);
@@ -61,7 +64,7 @@ export function DonorDataProvider({ children }: { children: ReactNode }) {
     donation: (d) => {
       if (d.donor?.id !== user?.id) return;
       const known = itemsRef.current;
-      const msg = known && announce(known.find((x) => x.id === d.id), d);
+      const msg = known && announce(known.find((x) => x.id === d.id), d, t);
       if (msg) toast(msg);
       upsert(d);
     },

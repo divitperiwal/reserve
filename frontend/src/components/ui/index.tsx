@@ -12,11 +12,12 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, type LinkProps } from 'react-router-dom';
-import { AlertCircle, Apple, Check, ChevronRight, Croissant, Package, Phone, Soup, Wheat, X, type LucideIcon } from 'lucide-react';
+import { AlertCircle, Apple, Check, ChevronRight, Croissant, Languages, Package, Phone, Soup, Wheat, X, type LucideIcon } from 'lucide-react';
 import type { Category, Diet, Donation, Urgency } from '../../lib/types';
 import { rescueRisk, type RiskLevel, type RiskOpts } from '../../lib/risk';
 import { span } from '../../features/tracking/geo';
 import { clock, urgencyOf, useNow } from '../../lib/time';
+import { isLang, useLang, useT, type Lang } from '../../lib/i18n';
 import s from './ui.module.css';
 
 export const cx = (...c: (string | false | undefined | null)[]) => c.filter(Boolean).join(' ');
@@ -142,6 +143,32 @@ export function Segmented<T extends string | number>({
         </button>
       ))}
     </div>
+  );
+}
+
+const LANGUAGES: { value: Lang; label: string }[] = [
+  { value: 'en', label: 'English' },
+  { value: 'ta', label: 'தமிழ்' },
+  { value: 'hi', label: 'हिन्दी' },
+];
+
+// Segmented buttons in settings, a small select in page headers
+export function LanguageSwitch({ compact, block }: { compact?: boolean; block?: boolean }) {
+  const [lang, setLang] = useLang();
+  const t = useT();
+  if (!compact) return <Segmented block={block} label={t('Language')} value={lang} onChange={setLang} options={LANGUAGES} />;
+  return (
+    <label className={s.lang}>
+      <Languages size={16} strokeWidth={1.75} aria-hidden />
+      <span className="sr-only">{t('Language')}</span>
+      <select value={lang} onChange={(e) => isLang(e.target.value) && setLang(e.target.value)}>
+        {LANGUAGES.map((l) => (
+          <option key={l.value} value={l.value} lang={l.value}>
+            {l.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

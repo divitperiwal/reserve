@@ -4,6 +4,7 @@ import { Phone } from 'lucide-react';
 import { Avatar, Button, ButtonLink, Group, Row, Sheet, useToast } from '../../components/ui';
 import { api } from '../../lib/api';
 import { qty } from '../../lib/format';
+import { useT } from '../../lib/i18n';
 import { useNow } from '../../lib/time';
 import type { Donation } from '../../lib/types';
 import { CodeSheet } from '../tracking/codes';
@@ -32,14 +33,21 @@ const nearbyCount = (id: number) => {
 };
 
 export function PickupCloses({ to, className }: { to: string; className?: string }) {
+  const t = useT();
   const left = new Date(to).getTime() - useNow();
   const m = Math.max(0, Math.floor(left / 60_000));
-  const text = left <= 0 ? 'Pickup window closed' : m < 1 ? 'Pickup closes in less than a minute' : `Pickup closes in ${m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`}`;
+  const text =
+    left <= 0
+      ? t('Pickup window closed')
+      : m < 1
+        ? t('Pickup closes in less than a minute')
+        : t('Pickup closes in {time}', { time: m >= 60 ? t('{h}h {m}m', { h: Math.floor(m / 60), m: m % 60 }) : t('{m}m', { m }) });
   return <span className={className}>{text}</span>;
 }
 
 // Kitchen visibility and its stale nudge before a kitchen accepts, nearby volunteer count after
 export function WaitingNote({ d, className }: { d: Donation; className?: string }) {
+  const t = useT();
   const now = useNow();
   const [count, setCount] = useState<number | null>(null);
   const accepted = d.status === 'ACCEPTED';
@@ -51,16 +59,17 @@ export function WaitingNote({ d, className }: { d: Donation; className?: string 
       live = false;
     };
   }, [d.id, accepted]);
-  if (accepted) return count != null && count > 0 ? <span className={className}>{count === 1 ? '1 volunteer nearby notified' : `${count} volunteers nearby notified`}</span> : null;
+  if (accepted) return count != null && count > 0 ? <span className={className}>{count === 1 ? t('1 volunteer nearby notified') : t('{n} volunteers nearby notified', { n: count })}</span> : null;
   if (now >= new Date(d.pickupUntil).getTime()) return null;
   const stale = now - new Date(d.createdAt).getTime() >= 20 * 60_000;
-  return <span className={className}>{stale ? 'No kitchen has taken this yet. A longer pickup window helps.' : 'Kitchens nearby can see this.'}</span>;
+  return <span className={className}>{t(stale ? 'No kitchen has taken this yet. A longer pickup window helps.' : 'Kitchens nearby can see this.')}</span>;
 }
 
 // Detail for one donation, with the single action that fits its status
 export function DonationSheet({ d, onClose }: { d: Donation | null; onClose: () => void }) {
   const { upsert } = useDonorData();
   const toast = useToast();
+  const t = useT();
   const [codeOpen, setCodeOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [released, setReleased] = useState(false);
@@ -88,7 +97,7 @@ export function DonationSheet({ d, onClose }: { d: Donation | null; onClose: () 
     try {
       await api.cancelDonation(d.id);
       upsert({ ...d, status: 'CANCELLED' });
-      toast('Donation cancelled');
+      toast(t('Donation cancelled'));
       onClose();
     } catch (e) {
       toast((e as Error).message, { error: true });
@@ -99,39 +108,39 @@ export function DonationSheet({ d, onClose }: { d: Donation | null; onClose: () 
 
   const confirm = async (code: string) => {
     upsert(await api.confirmPickup(d.id, code));
-    toast('Pickup confirmed');
+    toast(t('Pickup confirmed'));
   };
 
   const footer =
     d.status === 'AVAILABLE' ? (
       <Button variant="danger" size="lg" block loading={cancelling} onClick={cancel}>
-        Cancel donation
+        {t('Cancel donation')}
       </Button>
     ) : d.status === 'ACCEPTED' ? (
       <div className={s.footerPair}>
         <ButtonLink to={`/track/${d.id}`} variant="secondary" size="lg">
-          Track
+          {t('Track')}
         </ButtonLink>
         <Button variant="danger" size="lg" className={s.grow} loading={cancelling} onClick={cancel}>
-          Cancel donation
+          {t('Cancel donation')}
         </Button>
       </div>
     ) : d.status === 'CLAIMED' ? (
       <div className={s.footerPair}>
         <ButtonLink to={`/track/${d.id}`} variant="secondary" size="lg">
-          Track
+          {t('Track')}
         </ButtonLink>
         <Button size="lg" className={s.grow} onClick={() => setCodeOpen(true)}>
-          Confirm pickup
+          {t('Confirm pickup')}
         </Button>
       </div>
     ) : d.status === 'PICKED_UP' ? (
       <ButtonLink to={`/track/${d.id}`} size="lg" block>
-        Track delivery
+        {t('Track delivery')}
       </ButtonLink>
     ) : d.status === 'EXPIRED' ? (
       <Button size="lg" block onClick={() => navigate('/donor/new', { state: { repost: toRepost(d) } })}>
-        Post again
+        {t('Post again')}
       </Button>
     ) : undefined;
 
@@ -140,8 +149,8 @@ export function DonationSheet({ d, onClose }: { d: Donation | null; onClose: () 
       <Sheet open={!codeOpen} onClose={onClose} title={d.title} footer={footer}>
         <div className={s.detail}>
           <div className={s.status}>
-            <strong>{statusText(d)}</strong>
-            {released && <span>The volunteer couldn't make it. We are finding another.</span>}
+            <strong>{statusText(d, t)}</strong>
+            {released && <span>{t('The volunteer couldn’t make it. We are finding another.')}</span>}
             {waiting && <PickupCloses to={d.pickupUntil} />}
             {waiting && <WaitingNote d={d} />}
           </div>
@@ -153,9 +162,9 @@ export function DonationSheet({ d, onClose }: { d: Donation | null; onClose: () 
               <Row
                 leading={<Avatar initials={d.volunteer.initials} size={40} tone="basil" />}
                 title={d.volunteer.name}
-                subtitle={d.volunteer.vehicle ?? 'Volunteer'}
+                subtitle={t(d.volunteer.vehicle ?? 'Volunteer')}
                 trailing={
-                  <a className={s.call} href={`tel:+91${d.volunteer.phone}`} aria-label={`Call ${firstName(d.volunteer.name)}`}>
+                  <a className={s.call} href={`tel:+91${d.volunteer.phone}`} aria-label={t('Call {name}', { name: firstName(d.volunteer.name, t) })}>
                     <Phone size={16} strokeWidth={2} aria-hidden />
                   </a>
                 }
@@ -165,11 +174,11 @@ export function DonationSheet({ d, onClose }: { d: Donation | null; onClose: () 
           )}
 
           <Group>
-            <Row title="Amount" trailing={qty(d)} />
-            {d.ngo && <Row title="Kitchen" trailing={d.ngo.name} />}
-            <Row title="Best before" trailing={clockTime(d.bestBefore)} />
-            <Row title="Pickup window" trailing={pickupWindow(d.pickupFrom, d.pickupUntil)} />
-            <Row title="Posted" trailing={dayTime(d.createdAt)} />
+            <Row title={t('Amount')} trailing={qty(d)} />
+            {d.ngo && <Row title={t('Kitchen')} trailing={d.ngo.name} />}
+            <Row title={t('Best before')} trailing={clockTime(d.bestBefore)} />
+            <Row title={t('Pickup window')} trailing={pickupWindow(d.pickupFrom, d.pickupUntil, t)} />
+            <Row title={t('Posted')} trailing={dayTime(d.createdAt, t)} />
           </Group>
         </div>
       </Sheet>
@@ -177,8 +186,8 @@ export function DonationSheet({ d, onClose }: { d: Donation | null; onClose: () 
         open={codeOpen}
         donationId={d.id}
         onClose={() => setCodeOpen(false)}
-        title="Confirm pickup"
-        hint={`Enter the 4-digit code ${firstName(d.volunteer?.name)} shows you.`}
+        title={t('Confirm pickup')}
+        hint={t('Enter the 4-digit code {name} shows you.', { name: firstName(d.volunteer?.name, t) })}
         onSubmit={confirm}
       />
     </>

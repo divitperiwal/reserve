@@ -417,6 +417,9 @@
 .settings section > div {
   border-radius: 22px;
 }
+.langRow {
+  padding: var(--s-3);
+}
 .truncate {
   display: block;
   max-width: 200px;

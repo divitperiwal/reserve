@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Mic, Sparkles, Square } from 'lucide-react';
 import { Button, Segmented, useToast } from '../../components/ui';
 import { api, ApiError } from '../../lib/api';
+import { useLang, useT } from '../../lib/i18n';
 import type { DonationDraft } from '../../lib/types';
 import s from './PostFood.module.css';
 
@@ -23,7 +24,6 @@ const LANGS = [
   { value: 'ta-IN', label: 'Tamil' },
   { value: 'hi-IN', label: 'Hindi' },
 ];
-const FILLED = 'Filled in for you, check every field before posting';
 const MIC_ERRORS: Record<string, string> = {
   'not-allowed': 'The microphone is blocked. Allow it in your browser settings.',
   'service-not-allowed': 'The microphone is blocked. Allow it in your browser settings.',
@@ -37,12 +37,14 @@ function speechCtor() {
 
 export default function AiAssist({ photoUrl, uploading, onDraft }: { photoUrl: string; uploading: boolean; onDraft: (d: DonationDraft) => void }) {
   const toast = useToast();
+  const t = useT();
+  const [uiLang] = useLang();
   const [enabled, setEnabled] = useState(false);
   const [Speech] = useState(speechCtor);
   const [busy, setBusy] = useState<'photo' | 'voice' | null>(null);
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [lang, setLang] = useState('en-IN');
+  const [lang, setLang] = useState(`${uiLang}-IN`);
   const rec = useRef<Recognition | null>(null);
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export default function AiAssist({ photoUrl, uploading, onDraft }: { photoUrl: s
     setBusy(kind);
     try {
       onDraft(await api.aiDraft(input));
-      toast(FILLED);
+      toast(t('Filled in for you, check every field before posting'));
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) setEnabled(false);
       toast((e as Error).message, { error: true });
@@ -88,9 +90,9 @@ export default function AiAssist({ photoUrl, uploading, onDraft }: { photoUrl: s
     r.onend = () => {
       rec.current = null;
       setListening(false);
-      if (failure && failure !== 'aborted') toast(MIC_ERRORS[failure] ?? 'Voice input did not work. Type it in instead.', { error: true });
+      if (failure && failure !== 'aborted') toast(t(MIC_ERRORS[failure] ?? 'Voice input did not work. Type it in instead.'), { error: true });
       else if (text) draft('voice', { text: text.slice(0, 2000) });
-      else toast('Nothing was heard. Try again.', { error: true });
+      else toast(t('Nothing was heard. Try again.'), { error: true });
     };
     rec.current = r;
     setTranscript('');
@@ -106,24 +108,24 @@ export default function AiAssist({ photoUrl, uploading, onDraft }: { photoUrl: s
       <div className={s.aiRow}>
         {showPhoto && (
           <Button variant="secondary" size="sm" icon={<Sparkles size={16} strokeWidth={1.75} aria-hidden />} loading={busy === 'photo'} disabled={busy !== null || listening} onClick={() => draft('photo', { photoUrl })}>
-            Fill from photo
+            {t('Fill from photo')}
           </Button>
         )}
         {Speech &&
           (listening ? (
             <Button variant="dark" size="sm" icon={<Square size={14} strokeWidth={2} aria-hidden />} onClick={() => rec.current?.stop()}>
-              Done
+              {t('Done')}
             </Button>
           ) : (
             <Button variant="secondary" size="sm" icon={<Mic size={16} strokeWidth={1.75} aria-hidden />} loading={busy === 'voice'} disabled={busy !== null} onClick={listen}>
-              Describe it
+              {t('Describe it')}
             </Button>
           ))}
       </div>
-      {Speech && !listening && busy !== 'voice' && <Segmented label="Speaking language" value={lang} onChange={setLang} options={LANGS} />}
+      {Speech && !listening && busy !== 'voice' && <Segmented label={t('Speaking language')} value={lang} onChange={setLang} options={LANGS.map((l) => ({ ...l, label: t(l.label) }))} />}
       {(listening || busy === 'voice') && (
         <p className={s.transcript} aria-live="polite">
-          {transcript || 'Listening. Say what the food is, how much, and when it can be picked up.'}
+          {transcript || t('Listening. Say what the food is, how much, and when it can be picked up.')}
         </p>
       )}
     </div>

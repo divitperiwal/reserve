@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '../../lib/api';
 import { homeFor, useAuth } from '../../lib/auth';
+import { fill, type T } from '../../lib/i18n';
 import type { AuthResponse, Role } from '../../lib/types';
 
 export type Errors = Record<string, string | undefined>;
@@ -34,13 +35,13 @@ export function useFinishAuth() {
 }
 
 // Map an API failure to inline field errors, or a form-level message when there are none
-export function readError(err: unknown): { fields: Errors; message?: string } {
+export function readError(err: unknown, t: T = fill): { fields: Errors; message?: string } {
   if (err instanceof ApiError) {
-    if (err.status >= 500) return { fields: {}, message: 'ReServe is not responding right now. Try again in a moment.' };
+    if (err.status >= 500) return { fields: {}, message: t('ReServe is not responding right now. Try again in a moment.') };
     if (err.fields && Object.keys(err.fields).length) return { fields: err.fields };
     return { fields: {}, message: err.message };
   }
-  return { fields: {}, message: 'Something went wrong. Try again.' };
+  return { fields: {}, message: t('Something went wrong. Try again.') };
 }
 
 export function focusFirst(order: [field: string, id: string][], errors: Errors) {

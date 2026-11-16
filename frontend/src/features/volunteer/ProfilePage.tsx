@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star } from 'lucide-react';
-import { Avatar, Button, Chip, Field, Group, Row, Sheet, Toggle, useToast } from '../../components/ui';
+import { Avatar, Button, Chip, Field, Group, LanguageSwitch, Row, Sheet, Toggle, useToast } from '../../components/ui';
 import { useAuth } from '../../lib/auth';
 import { usePushSetting } from '../../lib/push';
+import { useT } from '../../lib/i18n';
 import { NotificationsRow } from '../push/NotificationsRow';
 import { useVolunteer } from './context';
 import s from './volunteer.module.css';
@@ -16,6 +17,7 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const [sheet, setSheet] = useState(false);
   const toast = useToast();
+  const t = useT();
   const push = usePushSetting((m) => toast(m, { error: true }));
 
   return (
@@ -48,6 +50,12 @@ export default function ProfilePage() {
             <NotificationsRow push={push} subtitle="Pickups near you that need a volunteer" />
           </Group>
         )}
+
+        <Group title={t('Language')}>
+          <div className={s.langRow}>
+            <LanguageSwitch block />
+          </div>
+        </Group>
 
         <Group title="Delivery">
           <Row title="Vehicle" trailing={user.vehicle ?? 'Not set'} onClick={() => setSheet(true)} />

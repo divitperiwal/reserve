@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import { AlertCircle, Camera, Trash2 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useT } from '../../lib/i18n';
 import s from './PostFood.module.css';
 
 const TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -8,6 +9,7 @@ const MAX = 5 * 1024 * 1024;
 
 export default function PhotoDrop({ url, onChange, onUploading }: { url: string; onChange: (url: string) => void; onUploading: (busy: boolean) => void }) {
   const id = useId();
+  const t = useT();
   const [local, setLocal] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [over, setOver] = useState(false);
@@ -21,8 +23,8 @@ export default function PhotoDrop({ url, onChange, onUploading }: { url: string;
   async function take(file: File | undefined) {
     if (!file) return;
     setError(null);
-    if (!TYPES.includes(file.type)) return setError('Use a JPG, PNG or WEBP image.');
-    if (file.size > MAX) return setError(`That photo is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 5 MB.`);
+    if (!TYPES.includes(file.type)) return setError(t('Use a JPG, PNG or WEBP image.'));
+    if (file.size > MAX) return setError(t('That photo is {size} MB. The limit is 5 MB.', { size: (file.size / 1024 / 1024).toFixed(1) }));
     setLocal(URL.createObjectURL(file));
     setBusy(true);
     onUploading(true);
@@ -32,7 +34,7 @@ export default function PhotoDrop({ url, onChange, onUploading }: { url: string;
     } catch (e) {
       setLocal(null);
       onChange('');
-      setError((e as Error).message || 'Upload failed. Try again.');
+      setError((e as Error).message || t('Upload failed. Try again.'));
     } finally {
       setBusy(false);
       onUploading(false);
@@ -58,16 +60,16 @@ export default function PhotoDrop({ url, onChange, onUploading }: { url: string;
       {src ? (
         <div className={s.thumbRow}>
           <span className={s.thumb} data-busy={busy || undefined}>
-            <img src={src} alt="Food photo preview" />
+            <img src={src} alt={t('Food photo preview')} />
             {busy && <span className={s.thumbSpin} aria-hidden />}
           </span>
           <span className={s.thumbText}>
-            <strong>{busy ? 'Uploading photo' : 'Photo added'}</strong>
-            <span>{busy ? 'This takes a moment on mobile data.' : 'Volunteers see this on the pickup card.'}</span>
+            <strong>{t(busy ? 'Uploading photo' : 'Photo added')}</strong>
+            <span>{t(busy ? 'This takes a moment on mobile data.' : 'Volunteers see this on the pickup card.')}</span>
           </span>
           <button type="button" className={s.textBtn} onClick={remove} disabled={busy}>
             <Trash2 size={16} strokeWidth={1.75} aria-hidden />
-            Remove
+            {t('Remove')}
           </button>
         </div>
       ) : (
@@ -84,8 +86,8 @@ export default function PhotoDrop({ url, onChange, onUploading }: { url: string;
         >
           <Camera size={20} strokeWidth={1.75} aria-hidden />
           <span>
-            <strong>Add a photo</strong> <span className={s.dropSoft}>drag here or</span> <u>browse</u>
-            <span className={s.dropHint}>JPG, PNG or WEBP up to 5 MB</span>
+            <strong>{t('Add a photo')}</strong> <span className={s.dropSoft}>{t('drag here or')}</span> <u>{t('browse')}</u>
+            <span className={s.dropHint}>{t('JPG, PNG or WEBP up to 5 MB')}</span>
           </span>
         </label>
       )}

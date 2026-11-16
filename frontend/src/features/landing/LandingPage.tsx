@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Bike, Building2, HandHeart, PackagePlus, Soup, Store, type LucideIcon } from 'lucide-react';
-import { ButtonLink, Logo, Skeleton } from '../../components/ui';
+import { ButtonLink, LanguageSwitch, Logo, Skeleton } from '../../components/ui';
 import { homeFor, useAuth } from '../../lib/auth';
 import { num, tonnes } from '../../lib/format';
+import { useT } from '../../lib/i18n';
 import type { Role } from '../../lib/types';
 import { PickupPreview } from './PickupPreview';
 import { usePublicStats } from './usePublicStats';
@@ -22,6 +23,7 @@ const roles: { role: Role; icon: LucideIcon; title: string; text: string; cta: s
 
 export default function LandingPage() {
   const { user } = useAuth();
+  const t = useT();
   const start = (role: Role) => (user ? homeFor(user.role) : `/auth?role=${role}`);
 
   return (
@@ -29,24 +31,25 @@ export default function LandingPage() {
       <header className={s.nav}>
         <div className={s.navInner}>
           <Logo />
-          <nav className={s.links} aria-label="Sections">
-            <a href="#how">How it works</a>
-            <a href="#impact">Impact</a>
-            <Link to="/leaderboard">Leaderboard</Link>
-            <a href="#roles">Who it’s for</a>
+          <nav className={s.links} aria-label={t('Sections')}>
+            <a href="#how">{t('How it works')}</a>
+            <a href="#impact">{t('Impact')}</a>
+            <Link to="/leaderboard">{t('Leaderboard')}</Link>
+            <a href="#roles">{t('Who it’s for')}</a>
           </nav>
           <div className={s.navActions}>
+            <LanguageSwitch compact />
             {user ? (
               <ButtonLink to={homeFor(user.role)} size="sm">
-                Open dashboard
+                {t('Open dashboard')}
               </ButtonLink>
             ) : (
               <>
                 <ButtonLink to="/auth" variant="ghost" size="sm">
-                  Sign in
+                  {t('Sign in')}
                 </ButtonLink>
-                <ButtonLink to="/auth?role=DONOR" size="sm">
-                  Donate food
+                <ButtonLink to="/auth?role=DONOR" size="sm" className={s.navCta}>
+                  {t('Donate food')}
                 </ButtonLink>
               </>
             )}
@@ -57,14 +60,14 @@ export default function LandingPage() {
       <main>
         <section className={s.hero}>
           <div className={s.heroText}>
-            <h1 className={s.headline}>Good food should never go to waste.</h1>
-            <p className={s.lede}>Post your surplus, a nearby kitchen takes what it needs, and a volunteer delivers it before it expires.</p>
+            <h1 className={s.headline}>{t('Good food should never go to waste.')}</h1>
+            <p className={s.lede}>{t('Post your surplus, a nearby kitchen takes what it needs, and a volunteer delivers it before it expires.')}</p>
             <div className={s.ctas}>
               <ButtonLink to={start('DONOR')} size="lg">
-                Donate food
+                {t('Donate food')}
               </ButtonLink>
               <ButtonLink to={start('VOLUNTEER')} size="lg" variant="secondary">
-                Volunteer a pickup
+                {t('Volunteer a pickup')}
               </ButtonLink>
             </div>
           </div>
@@ -75,14 +78,14 @@ export default function LandingPage() {
 
         <section id="how" className={s.section} aria-labelledby="how-title">
           <h2 id="how-title" className={s.sectionTitle}>
-            From surplus to plate in under an hour.
+            {t('From surplus to plate in under an hour.')}
           </h2>
           <ol className={s.steps}>
             {steps.map(({ icon: Icon, title, text }) => (
               <li key={title} className={s.step}>
                 <Icon size={28} strokeWidth={1.75} className={s.icon} aria-hidden />
-                <h3 className={s.itemTitle}>{title}</h3>
-                <p className={s.itemText}>{text}</p>
+                <h3 className={s.itemTitle}>{t(title)}</h3>
+                <p className={s.itemText}>{t(text)}</p>
               </li>
             ))}
           </ol>
@@ -92,16 +95,16 @@ export default function LandingPage() {
 
         <section id="roles" className={s.section} aria-labelledby="roles-title">
           <h2 id="roles-title" className={s.sectionTitle}>
-            Three ways to help.
+            {t('Three ways to help.')}
           </h2>
           <ul className={s.roles}>
             {roles.map(({ role, icon: Icon, title, text, cta }) => (
               <li key={role} className={s.role}>
                 <Icon size={28} strokeWidth={1.75} className={s.icon} aria-hidden />
-                <h3 className={s.itemTitle}>{title}</h3>
-                <p className={s.itemText}>{text}</p>
+                <h3 className={s.itemTitle}>{t(title)}</h3>
+                <p className={s.itemText}>{t(text)}</p>
                 <ButtonLink to={start(role)} variant="ghost" className={s.roleLink}>
-                  {cta}
+                  {t(cta)}
                 </ButtonLink>
               </li>
             ))}
@@ -110,16 +113,16 @@ export default function LandingPage() {
 
         <section className={s.closing} aria-labelledby="closing-title">
           <h2 id="closing-title" className={s.closingTitle}>
-            Someone nearby cooked too much tonight.
+            {t('Someone nearby cooked too much tonight.')}
           </h2>
           <ButtonLink to={start('DONOR')} size="lg">
-            {user ? 'Open dashboard' : 'Get started'}
+            {t(user ? 'Open dashboard' : 'Get started')}
           </ButtonLink>
         </section>
       </main>
 
       <footer className={s.footer}>
-        <span>ReServe, rescuing food around Tambaram and Chengalpattu.</span>
+        <span>{t('ReServe, rescuing food around Tambaram and Chengalpattu.')}</span>
         <span>© 2026</span>
       </footer>
     </div>
@@ -129,20 +132,21 @@ export default function LandingPage() {
 // Three headline numbers; skeletons while loading, the whole section hides if the request fails
 function Impact() {
   const stats = usePublicStats();
+  const t = useT();
   if (stats.status === 'error') return null;
   const items =
     stats.status === 'ok'
       ? [
-          { value: num(stats.data.mealsRescued), label: 'meals rescued' },
-          { value: tonnes(stats.data.foodKg), label: 'of food kept out of landfill' },
-          { value: `${Math.round(stats.data.deliveredBeforeExpiryPct)}%`, label: 'delivered before expiry' },
+          { value: num(stats.data.mealsRescued), label: t('meals rescued') },
+          { value: tonnes(stats.data.foodKg), label: t('of food kept out of landfill') },
+          { value: `${Math.round(stats.data.deliveredBeforeExpiryPct)}%`, label: t('delivered before expiry') },
         ]
       : null;
 
   return (
     <section id="impact" className={s.section} aria-labelledby="impact-title" aria-busy={!items}>
       <h2 id="impact-title" className={s.sectionTitle}>
-        What we’ve rescued so far.
+        {t('What we’ve rescued so far.')}
       </h2>
       <dl className={s.stats}>
         {[0, 1, 2].map((i) => (
@@ -162,7 +166,7 @@ function Impact() {
         ))}
       </dl>
       <ButtonLink to="/leaderboard" variant="ghost" className={s.roleLink}>
-        See the leaderboard
+        {t('See the leaderboard')}
       </ButtonLink>
     </section>
   );

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
-import { Avatar, Badge, Button, useToast } from '../../components/ui';
+import { Avatar, Badge, Button, LanguageSwitch, useToast } from '../../components/ui';
 import { Columns, Page, Panel, Topbar } from '../../components/dash';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { usePushSetting } from '../../lib/push';
+import { useT } from '../../lib/i18n';
 import { num } from '../../lib/format';
 import type { MyStats } from '../../lib/types';
 import { ImpactCard } from '../impact/ImpactCard';
@@ -16,6 +17,7 @@ export function Profile() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+  const t = useT();
   const push = usePushSetting((m) => toast(m, { error: true }));
   const [stats, setStats] = useState<MyStats | null>(null);
 
@@ -66,6 +68,9 @@ export function Profile() {
         side={
           <>
             <ImpactCard mealsLabel="Meals received" />
+            <Panel title={t('Language')}>
+              <LanguageSwitch block />
+            </Panel>
             <Panel title={stats?.monthLabel ?? 'This month'}>
               <dl className={p.impact}>
                 <div>
