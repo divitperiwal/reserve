@@ -3,7 +3,6 @@ export type Diet = 'VEG' | 'NON_VEG';
 export type Category = 'COOKED' | 'BAKERY' | 'FRUIT_VEG' | 'PACKAGED' | 'RAW';
 export type Unit = 'SERVINGS' | 'KG' | 'PACKS';
 export type Status = 'AVAILABLE' | 'ACCEPTED' | 'CLAIMED' | 'PICKED_UP' | 'DELIVERED' | 'EXPIRED' | 'CANCELLED';
-export type Source = 'APP' | 'VOICE';
 export type SafetyCheck = 'COVERED' | 'SAFE_TEMP' | 'NO_RETURNS' | 'ALLERGENS_NOTED';
 export type Urgency = 'CRITICAL' | 'SOON' | 'FRESH' | 'EXPIRED';
 
@@ -73,7 +72,6 @@ export interface Donation {
   pickupUntil: string;
   safetyChecks: SafetyCheck[];
   status: Status;
-  source: Source;
   donor: PersonRef;
   volunteer?: PersonRef;
   ngo?: NgoRef;
@@ -106,18 +104,6 @@ export interface CreateDonation {
   pickupFrom: string;
   pickupUntil: string;
   safetyChecks: SafetyCheck[];
-}
-
-export interface DonationDraft {
-  title?: string;
-  diet?: Diet;
-  category?: Category;
-  quantity?: number;
-  unit?: Unit;
-  bestBeforeMinutes?: number;
-  pickupFromMinutes?: number;
-  pickupUntilMinutes?: number;
-  note?: string;
 }
 
 export interface PublicStats {

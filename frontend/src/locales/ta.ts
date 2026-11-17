@@ -325,19 +325,7 @@ export const ta: Record<string, string> = {
   '{n} checks left': 'இன்னும் {n} சரிபார்ப்புகள் உள்ளன',
   'Waiting for the photo to upload': 'படம் பதிவேறக் காத்திருக்கிறது',
 
-  // AI assist
-  'Filled in for you, check every field before posting': 'உங்களுக்காக நிரப்பியுள்ளோம், பதிவிடும் முன் ஒவ்வொன்றையும் சரிபாருங்கள்',
-  'The microphone is blocked. Allow it in your browser settings.': 'மைக் தடுக்கப்பட்டுள்ளது. பிரவுசர் அமைப்புகளில் அனுமதியுங்கள்.',
-  'Nothing was heard. Try again.': 'எதுவும் கேட்கவில்லை. மீண்டும் முயலுங்கள்.',
-  'Voice input did not work. Type it in instead.': 'குரல் பதிவு வேலை செய்யவில்லை. தட்டச்சு செய்யுங்கள்.',
-  'Fill from photo': 'படத்திலிருந்து நிரப்புங்கள்',
-  Done: 'முடிந்தது',
-  'Describe it': 'சொல்லுங்கள்',
-  'Speaking language': 'பேசும் மொழி',
   English: 'ஆங்கிலம்',
-  Tamil: 'தமிழ்',
-  Hindi: 'இந்தி',
-  'Listening. Say what the food is, how much, and when it can be picked up.': 'கேட்கிறோம். என்ன உணவு, எவ்வளவு, எப்போது எடுக்கலாம் என்று சொல்லுங்கள்.',
 
   // Photo
   'Use a JPG, PNG or WEBP image.': 'JPG, PNG அல்லது WEBP படத்தைப் பயன்படுத்துங்கள்.',
@@ -385,7 +373,6 @@ export const ta: Record<string, string> = {
   'At risk': 'ஆபத்தில்',
   'Safe, {time} to spare': 'பாதுகாப்பு, {time} மீதம்',
   'Tight, {time} to spare': 'நேரம் குறைவு, {time} மீதம்',
-  'By phone': 'தொலைபேசி மூலம்',
   '{h}h {m}m left': '{h} மணி {m} நிமிடம் மீதம்',
   '{time} until best before': 'நன்றாக இருக்கும் நேரம் வரை {time}',
   'ReServe home': 'ReServe முகப்பு',

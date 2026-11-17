@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, type LinkProps } from 'react-router-dom';
-import { AlertCircle, Apple, Check, ChevronRight, Croissant, Languages, Package, Phone, Soup, Wheat, X, type LucideIcon } from 'lucide-react';
+import { AlertCircle, Apple, Check, ChevronRight, Croissant, Languages, Package, Soup, Wheat, X, type LucideIcon } from 'lucide-react';
 import type { Category, Diet, Donation, Urgency } from '../../lib/types';
 import { rescueRisk, type RiskLevel, type RiskOpts } from '../../lib/risk';
 import { span } from '../../features/tracking/geo';
@@ -98,18 +98,6 @@ export function RiskBadge({ d, ...opts }: { d: Donation } & Omit<RiskOpts, 'now'
   return (
     <Badge tone={riskTone[level]} dot className={s.risk}>
       {text}
-    </Badge>
-  );
-}
-
-// Marks food a donor posted by calling the hotline
-export function PhoneBadge({ d }: { d: Pick<Donation, 'source'> }) {
-  const t = useT();
-  if (d.source !== 'VOICE') return null;
-  return (
-    <Badge className={s.phone}>
-      <Phone size={12} strokeWidth={2} aria-hidden />
-      {t('By phone')}
     </Badge>
   );
 }

@@ -5,8 +5,6 @@ Surplus food, rescued before it expires. Donors post leftover food, a nearby kit
 - `backend/`: Java 21, Spring Boot 3, PostgreSQL, Flyway, JWT, Server-Sent Events
 - `frontend/`: React 19, TypeScript, Vite, Leaflet
 - `SPEC.md`: the API contract and domain rules both sides follow
-- `docs/demo.md`: a 5 to 7 minute classroom demo script
-- `docs/bolna.md`: setting up the donation hotline
 
 ## Run it
 
@@ -37,7 +35,7 @@ OTP sign-in runs in dev mode: the code is printed in the backend log and shown i
 
 ## How it works
 
-1. **Post.** A donor lists food with quantity, pickup window, best-before time and a 4-point safety checklist. They can fill the form from a photo or by describing the food, or just phone the hotline.
+1. **Post.** A donor lists food with quantity, pickup window, best-before time and a 4-point safety checklist.
 2. **Accept.** Kitchens see open food nearby, each with a rescue-risk badge, and accept all of a post or only the amount they need. A partial accept splits the post, and the rest stays open for other kitchens.
 3. **Deliver.** Volunteers are only offered food a kitchen has accepted. A claim is one atomic update, so two people never get the same pickup.
 4. **Track.** While on a pickup, the volunteer's browser shares its location every few seconds. The backend pushes it over SSE to the donor and the NGO, and the map shows the road route and an ETA.
@@ -50,8 +48,6 @@ Food that nobody has collected expires when its pickup window closes.
 - **Rescue risk.** A Safe, Tight or At risk badge on food, based on the time left after the trip to the donor and on to the kitchen. It shows for kitchens, volunteers and on the tracking page.
 - **Road routing.** Routes and ETAs come from OSRM. If it is unreachable the app falls back to straight lines and a flat speed.
 - **QR handover.** The volunteer's phone shows a QR code next to the 4-digit code. The donor or kitchen can scan it with the camera or type the digits.
-- **Photo and voice autofill.** Claude reads a food photo, or a spoken or typed description in Tamil, Hindi or English, and fills the post form. Needs `ANTHROPIC_API_KEY`, otherwise the controls are hidden.
-- **Donation hotline.** A donor phones a Bolna voice agent and the food is posted while they talk, marked "By phone". Needs `VOICE_SECRET`, see `docs/bolna.md`.
 - **Push alerts.** Critical food (under 2 hours to best before) alerts nearby kitchens, an accept alerts the donor and nearby volunteers. The app is installable. Needs the VAPID keys.
 - **Insights.** Kitchens get a surplus history overlay on the map and an "Expected surplus" forecast on Insights, built from eight weeks of donor patterns.
 - **Impact.** A public leaderboard at `/leaderboard`, all-time impact cards with badges, and a printable certificate at `/certificate` (use Save as PDF).
@@ -73,10 +69,6 @@ Backend environment variables:
 | `APP_UPLOAD_DIR` | `./uploads` | Where donation photos are stored |
 | `APP_CORS_ORIGINS` | `http://localhost:*,http://127.0.0.1:*` | Allowed browser origins |
 | `APP_TASK_POOL_SIZE` | `2` | Threads for background work such as push sends |
-| `ANTHROPIC_API_KEY` | unset, drafting off | Enables photo and voice autofill |
-| `AI_MODEL` | `claude-opus-5-5` | Model used for autofill |
-| `AI_GLOBAL_PER_HOUR` | `200` | Autofill drafts per hour across all donors, on top of 30 per donor |
-| `VOICE_SECRET` | unset, hotline off | Shared secret Bolna sends in `X-Voice-Secret` |
 | `VAPID_PUBLIC_KEY` | unset, push off | Web push public key |
 | `VAPID_PRIVATE_KEY` | unset, push off | Web push private key |
 | `VAPID_SUBJECT` | `mailto:admin@reserve.local` | Push contact, a `mailto:` or `https:` URL |
@@ -93,21 +85,18 @@ Example with everything on:
 
 ```bash
 cd backend
-ANTHROPIC_API_KEY=sk-ant-... VOICE_SECRET=change-me-to-something-long VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... mvn spring-boot:run
+VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... mvn spring-boot:run
 ```
 
-## Phones and the hotline: expose it with a tunnel
+## Phones: expose it with a tunnel
 
-Phones need an `https` address for the camera scan, location and push, and Bolna needs a public address to call. A free tunnel does both:
+Phones need an `https` address for the camera scan, location and push. A free tunnel gives you one:
 
 ```bash
 # Frontend, for phones (the Vite dev server proxies /api to the backend)
 cd frontend
 __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=.trycloudflare.com npm run dev
 cloudflared tunnel --url http://localhost:5173
-
-# Backend, for Bolna
-cloudflared tunnel --url http://localhost:8080
 ```
 
 In PowerShell, set the variable on its own line first:
@@ -117,9 +106,11 @@ cd frontend
 $env:__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = ".trycloudflare.com"; npm run dev
 ```
 
-The same applies to the other `VAR=value command` examples in this README and in `docs/demo.md`: use `$env:VAR = "value"` before the command.
+The same applies to the other `VAR=value command` examples in this README: use `$env:VAR = "value"` before the command.
 
-Open the printed `https://....trycloudflare.com` address on the phone. Vite blocks unknown host names unless they are allowed, so use the allowed-hosts variable shown above. For ngrok use `.ngrok-free.app` (or the host ngrok prints) and `ngrok http 5173` or `ngrok http 8080`. The hotline URL in the Bolna functions is the backend tunnel, as in `docs/bolna.md`.
+Open the printed `https://....trycloudflare.com` address on the phone. Vite blocks unknown host names unless they are allowed, so use the allowed-hosts variable shown above. For ngrok use `.ngrok-free.app` (or the host ngrok prints) and `ngrok http 5173`.
+
+The backend must also accept the tunnel's address, or every sign-in and action from the phone fails with 403 "Invalid CORS request". Start it with the tunnel added to `APP_CORS_ORIGINS`, for example `APP_CORS_ORIGINS="http://localhost:*,http://127.0.0.1:*,https://*.ngrok-free.dev,https://*.ngrok-free.app"` (or `https://*.trycloudflare.com` for cloudflared).
 
 ## Reset the dev database
 

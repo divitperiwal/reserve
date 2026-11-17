@@ -1,4 +1,4 @@
-import { Badge, PhoneBadge } from '../../components/ui';
+import { Badge } from '../../components/ui';
 import { FoodThumb } from '../../components/dash';
 import { num, qty, statusLabel } from '../../lib/format';
 import { useT } from '../../lib/i18n';
@@ -39,7 +39,7 @@ export function DonationTable({ items, onOpen, empty, label }: { items: Donation
             </span>
           </span>
           <span role="cell">
-            <Badge tone={tone[d.status]}>{t(statusLabel[d.status])}</Badge> <PhoneBadge d={d} />
+            <Badge tone={tone[d.status]}>{t(statusLabel[d.status])}</Badge>
           </span>
           <span role="cell" className={s.cellMuted}>
             {qty(d, t)}

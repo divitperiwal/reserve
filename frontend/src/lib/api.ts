@@ -3,7 +3,6 @@ import type {
   AuthResponse,
   CreateDonation,
   DashboardStats,
-  DonationDraft,
   Donation,
   GeoPoint,
   Leaderboard,
@@ -148,8 +147,6 @@ export const api = {
     return data;
   },
 
-  aiStatus: () => request<{ enabled: boolean }>('GET', '/ai/status'),
-  aiDraft: (input: { photoUrl: string } | { text: string }) => request<DonationDraft>('POST', '/ai/draft', input),
 
   pushKey: () => request<PushKey>('GET', '/push/key'),
   pushSubscribe: (input: PushSubscriptionInput) => request<void>('POST', '/push/subscribe', input),
