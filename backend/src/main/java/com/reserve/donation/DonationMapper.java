@@ -46,7 +46,7 @@ public class DonationMapper {
                 d.getId(), d.code(), d.getTitle(), d.getDiet(), d.getCategory(), d.getQuantity(), d.getUnit(),
                 d.getWeightKg(), d.getContainers(), d.getPhotoUrl(), d.getNote(), d.getAddress(), d.getLat(), d.getLng(),
                 d.getPreparedAt(), d.getBestBefore(), d.getPickupFrom(), d.getPickupUntil(), d.safetyCheckList(),
-                d.getStatus(), d.getSource(), PersonRef.of(d.getDonor(), null), PersonRef.of(d.getVolunteer(), volunteerRescues),
+                d.getStatus(), PersonRef.of(d.getDonor(), null), PersonRef.of(d.getVolunteer(), volunteerRescues),
                 NgoRef.of(d.getNgo()), d.getClaimedAt(), d.getPickedUpAt(), d.getDeliveredAt(), d.getCreatedAt(),
                 distance, d.meals(),
                 assignedVolunteer ? d.getPickupCode() : null,

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Hourglass, Minus, Plus, Utensils } from 'lucide-react';
-import { Button, DietMark, EmptyState, PhoneBadge, RiskBadge, Sheet, Skeleton, useToast } from '../../components/ui';
+import { Button, DietMark, EmptyState, RiskBadge, Sheet, Skeleton, useToast } from '../../components/ui';
 import { FoodThumb, SectionHead } from '../../components/dash';
 import { api, ApiError, shownError } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -107,7 +107,7 @@ export function AvailablePanel() {
                   {t('{closes}, best before {time}', { closes: closesIn(d.pickupUntil, now, t), time: timeOfDay(d.bestBefore, t, now) })}
                 </span>
                 <span>
-                  <RiskBadge d={d} kitchen={kitchen} /> <PhoneBadge d={d} />
+                  <RiskBadge d={d} kitchen={kitchen} />
                 </span>
               </span>
               {accepting && (

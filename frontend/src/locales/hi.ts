@@ -325,19 +325,7 @@ export const hi: Record<string, string> = {
   '{n} checks left': '{n} जाँच बाकी हैं',
   'Waiting for the photo to upload': 'फ़ोटो अपलोड होने का इंतज़ार है',
 
-  // AI assist
-  'Filled in for you, check every field before posting': 'आपके लिए भर दिया है, पोस्ट करने से पहले हर चीज़ जाँच लें',
-  'The microphone is blocked. Allow it in your browser settings.': 'माइक बंद है। ब्राउज़र की सेटिंग में इसकी इजाज़त दें।',
-  'Nothing was heard. Try again.': 'कुछ सुनाई नहीं दिया। फिर कोशिश करें।',
-  'Voice input did not work. Type it in instead.': 'आवाज़ से नहीं हो पाया। टाइप करके भरें।',
-  'Fill from photo': 'फ़ोटो से भरें',
-  Done: 'हो गया',
-  'Describe it': 'बोलकर बताएँ',
-  'Speaking language': 'बोलने की भाषा',
   English: 'अंग्रेज़ी',
-  Tamil: 'तमिल',
-  Hindi: 'हिन्दी',
-  'Listening. Say what the food is, how much, and when it can be picked up.': 'सुन रहे हैं। बताइए कौन सा खाना है, कितना है, और कब उठाया जा सकता है।',
 
   // Photo
   'Use a JPG, PNG or WEBP image.': 'JPG, PNG या WEBP फ़ोटो लगाएँ।',
@@ -385,7 +373,6 @@ export const hi: Record<string, string> = {
   'At risk': 'जोखिम में',
   'Safe, {time} to spare': 'सुरक्षित, {time} बाकी',
   'Tight, {time} to spare': 'समय कम, {time} बाकी',
-  'By phone': 'फ़ोन से',
   '{h}h {m}m left': '{h} घंटे {m} मिनट बाकी',
   '{time} until best before': 'ठीक रहने के समय तक {time}',
   'ReServe home': 'ReServe होम',
